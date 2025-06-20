@@ -1,3 +1,4 @@
+import 'package:flutter_sceneview/src/entities/arcore_hit_test_result.dart';
 import 'package:flutter_sceneview/src/views/node.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
@@ -28,7 +29,7 @@ abstract class FlutterSceneviewPlatform extends PlatformInterface {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
 
-    Future<void> init(int sceneId) {
+  Future<void> init(int sceneId) {
     throw UnimplementedError('init() has not been implemented.');
   }
 
@@ -40,9 +41,12 @@ abstract class FlutterSceneviewPlatform extends PlatformInterface {
     throw UnimplementedError('checkPermissions() has not been implemented.');
   }
 
-
   void addNode(SceneViewNode node) {
     throw UnimplementedError('addNode() has not been implemented.');
+  }
+
+  Future<List<ArCoreHitTestResult>> performHitTest(double x, double y) {
+    throw UnimplementedError("performHitTest() has not been implemented");
   }
 
   void dispose(int sceneId){

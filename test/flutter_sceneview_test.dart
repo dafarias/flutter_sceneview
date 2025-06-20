@@ -1,3 +1,4 @@
+import 'package:flutter_sceneview/src/entities/arcore_hit_test_result.dart';
 import 'package:flutter_sceneview/src/flutter_sceneview.dart';
 import 'package:flutter_sceneview/src/views/node.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -37,6 +38,12 @@ class MockFlutterSceneviewPlatform
   @override
   Future<bool?> checkPermissions() {
     // TODO: implement checkPermissions
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<ArCoreHitTestResult>> performHitTest(double x, double y) {
+    // TODO: implement performHitTest
     throw UnimplementedError();
   }
 }

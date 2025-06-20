@@ -52,10 +52,32 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     debugPrint('Running on: $_platformVersion\n');
     return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(title: const Text('Plugin example app')),
-        body: Center(child: SceneView()),
+      home: SafeArea(
+        child: Scaffold(
+          appBar: AppBar(title: const Text('Plugin example app')),
+          // body: Center(child: SceneView()),
+          body: Stack(
+            children: [
+              SceneView(),
+              Align(
+                alignment: Alignment.bottomCenter,
+                child: ElevatedButton(
+                  onPressed: _handleHitTest,
+                  child: Text('Hit test'),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
+  }
+
+  void _handleHitTest() async {
+    final results = await _flutterSceneviewPlugin.performHitTest(300, 300);
+
+    print('[Flutter] HitTestResults distance: ${results.first.distance}');
+    print('[Flutter] HitTestResults translation: ${results.first.pose.translation}');
+    print('[Flutter] HitTestResults rotation: ${results.first.pose.rotation}');
   }
 }
