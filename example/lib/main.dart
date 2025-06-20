@@ -4,7 +4,6 @@ import 'dart:async';
 import 'package:flutter/services.dart';
 import 'package:flutter_sceneview/flutter_sceneview.dart';
 
-
 void main() {
   runApp(const MyApp());
 }
@@ -33,7 +32,8 @@ class _MyAppState extends State<MyApp> {
     // We also handle the message potentially returning null.
     try {
       platformVersion =
-          await _flutterSceneviewPlugin.getPlatformVersion() ?? 'Unknown platform version';
+          await _flutterSceneviewPlugin.getPlatformVersion() ??
+          'Unknown platform version';
     } on PlatformException {
       platformVersion = 'Failed to get platform version.';
     }
@@ -50,15 +50,11 @@ class _MyAppState extends State<MyApp> {
 
   @override
   Widget build(BuildContext context) {
+    debugPrint('Running on: $_platformVersion\n');
     return MaterialApp(
       home: Scaffold(
-        appBar: AppBar(
-          title: const Text('Plugin example app'),
-        ),
-        body: Center(
-          child: ARView()
-          // Text('Running on: $_platformVersion\n'),
-        ),
+        appBar: AppBar(title: const Text('Plugin example app')),
+        body: Center(child: SceneView()),
       ),
     );
   }

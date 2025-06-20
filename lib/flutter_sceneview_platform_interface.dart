@@ -1,3 +1,4 @@
+import 'package:flutter_sceneview/src/views/node.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 import 'flutter_sceneview_method_channel.dart';
@@ -25,5 +26,26 @@ abstract class FlutterSceneviewPlatform extends PlatformInterface {
 
   Future<String?> getPlatformVersion() {
     throw UnimplementedError('platformVersion() has not been implemented.');
+  }
+
+    Future<void> init(int sceneId) {
+    throw UnimplementedError('init() has not been implemented.');
+  }
+
+  Future<bool?> hasRegisteredView() {
+    throw UnimplementedError('hasRegisteredView() has not been implemented.');
+  }
+
+  Future<bool?> checkPermissions() {
+    throw UnimplementedError('checkPermissions() has not been implemented.');
+  }
+
+
+  void addNode(SceneViewNode node) {
+    throw UnimplementedError('addNode() has not been implemented.');
+  }
+
+  void dispose(int sceneId){
+    throw UnimplementedError('dispose() has not been implemented.');
   }
 }
