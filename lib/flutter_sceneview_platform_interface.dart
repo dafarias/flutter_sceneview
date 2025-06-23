@@ -28,7 +28,7 @@ abstract class FlutterSceneviewPlatform extends PlatformInterface {
     throw UnimplementedError('platformVersion() has not been implemented.');
   }
 
-    Future<void> init(int sceneId) {
+  Future<void> init(int sceneId) {
     throw UnimplementedError('init() has not been implemented.');
   }
 
@@ -40,12 +40,15 @@ abstract class FlutterSceneviewPlatform extends PlatformInterface {
     throw UnimplementedError('checkPermissions() has not been implemented.');
   }
 
-
   void addNode(SceneViewNode node) {
     throw UnimplementedError('addNode() has not been implemented.');
   }
 
-  void dispose(int sceneId){
+  void addTestNode({String? fileName}) {
+    throw UnimplementedError('addTestNode() has not been implemented.');
+  }
+
+  void dispose(int sceneId) {
     throw UnimplementedError('dispose() has not been implemented.');
   }
 }

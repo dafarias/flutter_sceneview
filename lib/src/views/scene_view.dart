@@ -30,8 +30,7 @@ class _SceneViewState extends State<SceneView> {
 
   Future<void> _checkViewRegistration() async {
     final isReady = await FlutterSceneview().hasRegisteredView() ?? false;
-    if (isReady) {
-    }
+    if (isReady) {}
     debugPrint('AR View registered: $isReady');
   }
 
@@ -98,4 +97,16 @@ class _SceneViewState extends State<SceneView> {
     final SceneViewController controller = await _controller.future;
     controller.dispose();
   }
+
+  // Future<void> placeTestNode() async {
+  //   try {
+  //     Future.delayed(Duration(seconds: 3), () {
+  //       _controller.future.
+  //     })
+
+  //   } catch (e) {
+  //     debugPrint(e.toString());
+  //   }
+  // }
+
 }
