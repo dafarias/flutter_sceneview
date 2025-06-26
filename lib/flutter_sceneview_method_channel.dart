@@ -25,6 +25,12 @@ class MethodChannelFlutterSceneview extends FlutterSceneviewPlatform {
   }
 
   @override
+  Future<void> addTestNode({String? fileName} ) async {
+    final args = Map<String, dynamic>.from(fileName != null ? {'fileName': fileName} : {});
+    await arViewChannel.invokeMethod<void>('addNode', args);
+  }
+
+  @override
   Future<bool?> hasRegisteredView() async {
     final isReady = await methodChannel.invokeMethod<bool>('isReady');
     return isReady;

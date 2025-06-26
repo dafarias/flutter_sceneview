@@ -8,13 +8,17 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 class MockFlutterSceneviewPlatform
     with MockPlatformInterfaceMixin
     implements FlutterSceneviewPlatform {
-
   @override
   Future<String?> getPlatformVersion() => Future.value('42');
 
   @override
   void addNode(SceneViewNode node) {
     // TODO: implement addNode
+  }
+
+  @override
+  void addTestNode({String? fileName}) {
+    // TODO: implement addTestNode
   }
 
   @override
@@ -27,13 +31,13 @@ class MockFlutterSceneviewPlatform
     // TODO: implement init
     throw UnimplementedError();
   }
-  
+
   @override
   Future<bool?> hasRegisteredView() {
     // TODO: implement hasRegisteredView
     throw UnimplementedError();
   }
-  
+
   @override
   Future<bool?> checkPermissions() {
     // TODO: implement checkPermissions
@@ -42,7 +46,8 @@ class MockFlutterSceneviewPlatform
 }
 
 void main() {
-  final FlutterSceneviewPlatform initialPlatform = FlutterSceneviewPlatform.instance;
+  final FlutterSceneviewPlatform initialPlatform =
+      FlutterSceneviewPlatform.instance;
 
   test('$MethodChannelFlutterSceneview is the default instance', () {
     expect(initialPlatform, isInstanceOf<MethodChannelFlutterSceneview>());

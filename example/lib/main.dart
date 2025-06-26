@@ -54,7 +54,20 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       home: Scaffold(
         appBar: AppBar(title: const Text('Plugin example app')),
-        body: Center(child: SceneView()),
+        body: Center(
+          child: SceneView(
+            onViewCreated: (p0) {
+              Future.delayed(Duration(seconds: 3), () {
+                p0.addTestNode();
+              });
+
+              Future.delayed(Duration(seconds: 8), () {
+                p0.addTestNode(fileName: "golf_flag.glb");
+              });
+
+            },
+          ),
+        ),
       ),
     );
   }

@@ -6,6 +6,8 @@ import android.util.Log
 import android.view.View
 import android.widget.FrameLayout
 import androidx.lifecycle.Lifecycle
+import com.example.flutter_sceneview.FlutterSceneviewPlugin
+import com.google.android.filament.gltfio.FilamentInstance
 import com.google.ar.core.Config
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
@@ -13,14 +15,21 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.platform.PlatformView
 import io.github.sceneview.ar.ARSceneView
+import io.github.sceneview.math.Position
+import io.github.sceneview.math.Transform
+import io.github.sceneview.model.Model
 import io.github.sceneview.model.ModelInstance
 import io.github.sceneview.node.ModelNode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.io.File
+import java.io.FileOutputStream
+import kotlin.random.Random
+
 
 class SceneViewWrapper(
-    context: Context,
+    private val context: Context,
     lifecycle: Lifecycle,
     messenger: BinaryMessenger,
     id: Int,
@@ -46,14 +55,15 @@ class SceneViewWrapper(
     init {
         try {
             Log.i(TAG, "init")
-            sceneView = ARSceneView(context, sharedLifecycle = lifecycle, )
+            sceneView = ARSceneView(context, sharedLifecycle = lifecycle)
             sceneView.apply {
                 configureSession { session, config ->
                     config.lightEstimationMode = Config.LightEstimationMode.ENVIRONMENTAL_HDR
-                    config.depthMode = when (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC)) {
-                        true -> Config.DepthMode.AUTOMATIC
-                        else -> Config.DepthMode.DISABLED
-                    }
+                    config.depthMode =
+                        when (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC)) {
+                            true -> Config.DepthMode.AUTOMATIC
+                            else -> Config.DepthMode.DISABLED
+                        }
                     config.instantPlacementMode = Config.InstantPlacementMode.DISABLED
                 }
                 onSessionResumed = { session ->
@@ -83,7 +93,7 @@ class SceneViewWrapper(
     }
 
     private fun addNode() { //flutterNode: FlutterSceneViewNode
-
+        placeTestNode();
         //  val node = buildNode(flutterNode) ?: return
         //        sceneView.addChildNode(node)
         //AnchorNode(sceneView.engine, anchor).apply {}
@@ -146,16 +156,86 @@ class SceneViewWrapper(
             "init" -> {
                 result.success(null)
             }
+
             "addNode" -> {
 //                Log.i(TAG, "addNode")
 //                val flutterNode = FlutterSceneViewNode.from(call.arguments as Map<String, *>)
+                val fileName = call.argument<String>("fileName")
                 _mainScope.launch {
-                    addNode() //flutterNode
+                    placeTestNode(fileName)
+//                    addNode() //flutterNode
                 }
                 result.success(null)
                 return
             }
+
             else -> result.notImplemented()
         }
     }
+
+    fun placeTestNode(fileName: String? = null) {
+        try {
+            val assetPath = getAssetPath(fileName)
+
+            val modelInstance = if (assetPath.startsWith("/")) {
+                // It's an absolute file path -> load from FileA
+                sceneView.modelLoader.createModelInstance(File(assetPath))
+            } else {
+                // It's a relative asset path inside plugin APK assets -> load from assets
+                sceneView.modelLoader.createModelInstance(assetPath)
+            }
+
+            val node = ModelNode(
+                modelInstance = modelInstance,
+                scaleToUnits = 0.2f, // Optional scaling
+                centerOrigin =  Position(0f, 0f, 0f)  // Optional centering
+            )
+            // Apparently you can set the position of the node after its creation.
+           // node.position = randomPosition(-1f, 1f)
+
+            sceneView.addChildNode(node);
+        } catch (e: Exception) {
+            Log.e("ModelTest", "Failed to load cube.glb: ${e.message}")
+        }
+    }
+
+
+    fun getAssetPath(fileName: String? = null): String {
+        val default = "models/Duck.glb"
+        val flutterAssets = FlutterSceneviewPlugin.flutterAssets ?: return ""
+
+        return try {
+            if (fileName.isNullOrEmpty()) {
+                // Load the default asset directly from plugin's assets (no copying)
+                // Just return the relative path inside the plugin assets folder
+                default
+            } else {
+                val localFile = File(context.filesDir, fileName)
+                if (!localFile.exists()) {
+                    // Get Flutter asset relative path inside Flutter APK (e.g. "flutter_assets/assets/models/golf_flag.glb")
+                    val flutterAssetRelativePath =
+                        flutterAssets.getAssetFilePathByName("assets/models/$fileName")
+
+                    context.assets.open(flutterAssetRelativePath).use { input ->
+                        FileOutputStream(localFile).use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+                }
+
+                // Return absolute file path on local storage for ModelLoader to load as File
+                return localFile.absolutePath
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to load 3d asset $fileName: ${e.message}")
+            return default;
+        }
+    }
+
+    fun randomPosition(min: Float = -1.0f, max: Float = 1.0f): Position {
+        fun randomFloat() = Random.nextFloat() * (max - min) + min
+        return Position(randomFloat(), randomFloat(), randomFloat())
+    }
 }
+
+
