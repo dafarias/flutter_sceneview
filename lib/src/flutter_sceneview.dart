@@ -5,8 +5,11 @@ class FlutterSceneview {
     return FlutterSceneviewPlatform.instance.getPlatformVersion();
   }
 
-  // Future example:
-  // Future<void> placeObject(ARObject object) {
-  //   return FlutterSceneviewPlatform.instance.placeObject(object);
-  // }
+  Future<bool?> hasRegisteredView() {
+    return FlutterSceneviewPlatform.instance.hasRegisteredView();
+  }
+
+   Future<bool?> checkPermissions() {
+    return FlutterSceneviewPlatform.instance.checkPermissions();
+  }
 }
