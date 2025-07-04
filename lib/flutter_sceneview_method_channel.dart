@@ -1,5 +1,8 @@
+import 'dart:ffi';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_sceneview/src/entities/arcore_hit_test_result.dart';
 
 import 'flutter_sceneview_platform_interface.dart';
 
@@ -30,12 +33,26 @@ class MethodChannelFlutterSceneview extends FlutterSceneviewPlatform {
     return isReady;
   }
 
-
   @override
   Future<bool?> checkPermissions() async {
-    final hasCameraPermissions = await methodChannel.invokeMethod<bool>('checkPermissions');
+    final hasCameraPermissions = await methodChannel.invokeMethod<bool>(
+      'checkPermissions',
+    );
     return hasCameraPermissions;
   }
+
+  @override
+  Future<List<ArCoreHitTestResult>> performHitTest(double x, double y) async {
+    final hitTestResultRaw = await arViewChannel.invokeMethod<List<dynamic>?>(
+      'performHitTest',
+      {'x': x, 'y': y},
+    );
+
+    final hitTestResult =
+        hitTestResultRaw
+            ?.map((item) => ArCoreHitTestResult.fromMap(item))
+            .toList() ??
+        [];
+    return hitTestResult;
+  }
 }
-
-
