@@ -5,20 +5,23 @@ import 'dart:async';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_sceneview/flutter_sceneview.dart';
-import 'package:flutter_sceneview/src/views/controller.dart';
+
 
 class SceneView extends StatefulWidget {
   const SceneView({super.key, this.onViewCreated});
 
-  final Function(SceneViewController)? onViewCreated;
+  final Function(ARSceneController)? onViewCreated;
 
   @override
   State<SceneView> createState() => _SceneViewState();
 }
 
 class _SceneViewState extends State<SceneView> {
-  final Completer<SceneViewController> _controller =
-      Completer<SceneViewController>();
+
+  final Completer<ARSceneController> _controller =
+      Completer<ARSceneController>();
+      
+final GlobalKey _arViewKey = GlobalKey();
 
   bool _hasPermission = false;
 
@@ -30,8 +33,7 @@ class _SceneViewState extends State<SceneView> {
 
   Future<void> _checkViewRegistration() async {
     final isReady = await FlutterSceneview().hasRegisteredView() ?? false;
-    if (isReady) {
-    }
+    if (isReady) {}
     debugPrint('AR View registered: $isReady');
   }
 
@@ -58,6 +60,7 @@ class _SceneViewState extends State<SceneView> {
       viewType: viewType,
       surfaceFactory: (context, controller) {
         return AndroidViewSurface(
+          key: _arViewKey,
           controller: controller as AndroidViewController,
           gestureRecognizers: const <Factory<OneSequenceGestureRecognizer>>{},
           hitTestBehavior: PlatformViewHitTestBehavior.opaque,
@@ -83,7 +86,7 @@ class _SceneViewState extends State<SceneView> {
   }
 
   Future<void> onPlatformViewCreated(int id) async {
-    final controller = await SceneViewController.init(id);
+    final controller = await ARSceneController.init(sceneId: id, arViewKey: _arViewKey);
     _controller.complete(controller);
     widget.onViewCreated?.call(controller);
   }
@@ -95,7 +98,8 @@ class _SceneViewState extends State<SceneView> {
   }
 
   Future<void> _disposeController() async {
-    final SceneViewController controller = await _controller.future;
+    final ARSceneController controller = await _controller.future;
     controller.dispose();
   }
+
 }
