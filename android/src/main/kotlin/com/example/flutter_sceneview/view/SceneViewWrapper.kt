@@ -7,6 +7,8 @@ import android.view.View
 import android.widget.FrameLayout
 import androidx.lifecycle.Lifecycle
 import com.example.flutter_sceneview.FlutterSceneviewPlugin
+import com.example.flutter_sceneview.controller.ARController
+import com.example.flutter_sceneview.result.NodeResult
 import com.google.android.filament.gltfio.FilamentInstance
 import com.google.ar.core.Config
 import io.flutter.plugin.common.BinaryMessenger
@@ -15,6 +17,9 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.platform.PlatformView
 import io.github.sceneview.ar.ARSceneView
+import io.github.sceneview.ar.arcore.createAnchorOrNull
+import io.github.sceneview.ar.node.AnchorNode
+import io.github.sceneview.ar.scene.PlaneRenderer
 import io.github.sceneview.math.Position
 import io.github.sceneview.math.Transform
 import io.github.sceneview.model.Model
@@ -25,6 +30,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
+import kotlin.io.path.toPath
 import kotlin.random.Random
 
 
@@ -40,9 +46,10 @@ class SceneViewWrapper(
     private var sceneView: ARSceneView
     private val _mainScope = CoroutineScope(Dispatchers.Main)
     private val _channel = MethodChannel(messenger, "ar_view_wrapper")
+    private var _controller: ARController
 
     override fun getView(): View {
-        Log.i(TAG, "getView:")
+//        Log.i(TAG, "getView:")
         return sceneView
     }
 
@@ -57,15 +64,18 @@ class SceneViewWrapper(
             Log.i(TAG, "init")
             sceneView = ARSceneView(context, sharedLifecycle = lifecycle)
             sceneView.apply {
-                configureSession { session, config ->
-                    config.lightEstimationMode = Config.LightEstimationMode.ENVIRONMENTAL_HDR
+//                 Configure AR session settings
+                sessionConfiguration = { session, config ->
+                    // Enable depth if supported on the device
                     config.depthMode =
                         when (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC)) {
                             true -> Config.DepthMode.AUTOMATIC
                             else -> Config.DepthMode.DISABLED
                         }
-                    config.instantPlacementMode = Config.InstantPlacementMode.DISABLED
+//                    config.instantPlacementMode = Config.InstantPlacementMode.LOCAL_Y_UP
+                    config.lightEstimationMode = Config.LightEstimationMode.ENVIRONMENTAL_HDR
                 }
+
                 onSessionResumed = { session ->
                     Log.i(TAG, "onSessionCreated")
                 }
@@ -79,68 +89,85 @@ class SceneViewWrapper(
                     Log.i(TAG, "onTrackingFailureChanged: $reason");
                 }
             }
+
             sceneView.layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.MATCH_PARENT
+                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
             )
-            sceneView.keepScreenOn = true
             _channel.setMethodCallHandler(this)
 
         } catch (e: Exception) {
             Log.i(TAG, "Failed to init ARSceneView", e)
             sceneView = ARSceneView(context)
         }
+
+        _controller = ARController(
+            context = context,
+            sceneView = sceneView,
+            modelLoader = sceneView.modelLoader,
+            flutterAssets = FlutterSceneviewPlugin.flutterAssets,
+            channel = _channel,
+            coroutineScope = _mainScope
+        )
+
+//        sceneView.onTouchEvent = { motionEvent, hitResult ->
+//            if (motionEvent.action == MotionEvent.ACTION_UP && hitResult != null) {
+//                // Convert hit position to SceneView world position
+//                val hitPosition = hitResult.position
+//
+//                // Replace "Duck.glb" with a dynamic value if you send the model name from Flutter
+////                val modelName = "Duck.glb"
+//
+//                _controller?.onTap(hitPosition, )
+//
+//                true // event was handled
+//            } else {
+//                false // let others handle it
+//            }
+//        }
     }
 
-    private fun addNode() { //flutterNode: FlutterSceneViewNode
-        placeTestNode();
-        //  val node = buildNode(flutterNode) ?: return
-        //        sceneView.addChildNode(node)
-        //AnchorNode(sceneView.engine, anchor).apply {}
-        Log.d("addNode", "Done")
-    }
 
-//    private suspend fun buildNode(flutterNode: FlutterSceneViewNode): ModelNode? {
-//        var model: ModelInstance? = null
-//        /*
-//                AnchorNode(sceneView.engine, anchor)
-//                    .apply {
-//                        isEditable = true
-//                        //isLoading = true
-//                        sceneView.modelLoader.loadModelInstance(
-//                            "https://sceneview.github.io/assets/models/DamagedHelmet.glb"
-//                        )?.let { modelInstance ->
-//                            addChildNode(
-//                                ModelNode(
-//                                    modelInstance = modelInstance,
-//                                    // Scale to fit in a 0.5 meters cube
-//                                    scaleToUnits = 0.5f,
-//                                    // Bottom origin instead of center so the model base is on floor
-//                                    centerOrigin = Position(y = -0.5f)
-//                                ).apply {
-//                                    isEditable = true
-//                                }
-//                            )
-//                        }
-//                        //isLoading = false
-//                        anchorNode = this
-//                    }
-//        */
+//    private suspend fun buildNode(): ModelNode? { //flutterNode: FlutterSceneViewNode
+    /*  var model: ModelInstance? = null
+              AnchorNode(sceneView.engine, anchor)
+                  .apply {
+                      isEditable = true
+                      //isLoading = true
+                      sceneView.modelLoader.loadModelInstance(
+                          "https://sceneview.github.io/assets/models/DamagedHelmet.glb"
+                      )?.let { modelInstance ->
+                          addChildNode(
+                              ModelNode(
+                                  modelInstance = modelInstance,
+                                  // Scale to fit in a 0.5 meters cube
+                                  scaleToUnits = 0.5f,
+                                  // Bottom origin instead of center so the model base is on floor
+                                  centerOrigin = Position(y = -0.5f)
+                              ).apply {
+                                  isEditable = true
+                              }
+                          )
+                      }
+                      //isLoading = false
+                      anchorNode = this
+                  }*/
+
 //        when (flutterNode) {
 //            is FlutterReferenceNode -> {
 //                val fileLocation = Utils.getFlutterAssetKey(activity, flutterNode.fileLocation)
 //                Log.d("SceneViewWrapper", fileLocation)
-//                model =
-//                    sceneView.modelLoader.loadModelInstance(fileLocation)
+//                model = sceneView.modelLoader.loadModelInstance(fileLocation)
 //            }
 //        }
+
 //        if (model != null) {
 //            val modelNode = ModelNode(modelInstance = model, scaleToUnits = 1.0f).apply {
-//                transform(
-//                    position = flutterNode.position,
-//                    rotation = flutterNode.rotation,
-//                    //scale = flutterNode.scale,
-//                )
+//
+////                transform(
+////                    position = flutterNode.position,
+////                    rotation = flutterNode.rotation,
+////                    //scale = flutterNode.scale,
+////                )
 //                //scaleToUnitsCube(flutterNode.scaleUnits)
 //                // TODO: Fix centerOrigin
 //                //     centerOrigin(Position(x=-1.0f, y=-1.0f))
@@ -158,14 +185,19 @@ class SceneViewWrapper(
             }
 
             "addNode" -> {
-//                Log.i(TAG, "addNode")
-//                val flutterNode = FlutterSceneViewNode.from(call.arguments as Map<String, *>)
-                val fileName = call.argument<String>("fileName")
                 _mainScope.launch {
-                    placeTestNode(fileName)
-//                    addNode() //flutterNode
+                    onAddNode(call, result)
                 }
-                result.success(null)
+                return
+            }
+
+            "removeNode" -> {
+                onRemoveNode(call, result)
+                return
+            }
+
+            "removeAllNodes" -> {
+                onRemoveAllNodes(call, result)
                 return
             }
 
@@ -173,69 +205,68 @@ class SceneViewWrapper(
         }
     }
 
-    fun placeTestNode(fileName: String? = null) {
+    fun onAddNode(call: MethodCall, result: MethodChannel.Result) {
         try {
-            val assetPath = getAssetPath(fileName)
-
-            val modelInstance = if (assetPath.startsWith("/")) {
-                // It's an absolute file path -> load from FileA
-                sceneView.modelLoader.createModelInstance(File(assetPath))
-            } else {
-                // It's a relative asset path inside plugin APK assets -> load from assets
-                sceneView.modelLoader.createModelInstance(assetPath)
+            Log.i(TAG, "addNode")
+            val args = call.arguments as? Map<String, *>
+            if (args == null) {
+                result.error(
+                    "INVALID_ARGUMENTS",
+                    "Expected a map with node position and optional model file name",
+                    null
+                )
+                return
             }
+            _mainScope.launch {
+                try {
+                    val nodeResult = _controller.addNode(args)
+                    when (nodeResult) {
+                        is NodeResult.Placed -> {
+                            result.success(nodeResult.node.toMap())
+                        }
 
-            val node = ModelNode(
-                modelInstance = modelInstance,
-                scaleToUnits = 0.2f, // Optional scaling
-                centerOrigin =  Position(0f, 0f, 0f)  // Optional centering
-            )
-            // Apparently you can set the position of the node after its creation.
-           // node.position = randomPosition(-1f, 1f)
-
-            sceneView.addChildNode(node);
-        } catch (e: Exception) {
-            Log.e("ModelTest", "Failed to load cube.glb: ${e.message}")
-        }
-    }
-
-
-    fun getAssetPath(fileName: String? = null): String {
-        val default = "models/Duck.glb"
-        val flutterAssets = FlutterSceneviewPlugin.flutterAssets ?: return ""
-
-        return try {
-            if (fileName.isNullOrEmpty()) {
-                // Load the default asset directly from plugin's assets (no copying)
-                // Just return the relative path inside the plugin assets folder
-                default
-            } else {
-                val localFile = File(context.filesDir, fileName)
-                if (!localFile.exists()) {
-                    // Get Flutter asset relative path inside Flutter APK (e.g. "flutter_assets/assets/models/golf_flag.glb")
-                    val flutterAssetRelativePath =
-                        flutterAssets.getAssetFilePathByName("assets/models/$fileName")
-
-                    context.assets.open(flutterAssetRelativePath).use { input ->
-                        FileOutputStream(localFile).use { output ->
-                            input.copyTo(output)
+                        is NodeResult.Failed -> {
+                            result.error("ADD_NODE_FAILED", nodeResult.reason, null)
                         }
                     }
+                } catch (e: Exception) {
+                    result.error("ADD_NODE_ERROR", e.message ?: "Unknown error", null)
                 }
-
-                // Return absolute file path on local storage for ModelLoader to load as File
-                return localFile.absolutePath
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to load 3d asset $fileName: ${e.message}")
-            return default;
+            Log.e(TAG, "Failed to add node: ${e.message}")
+            result.error("ADD_NODE_ERROR", e.message ?: "Unknown error", null)
         }
     }
 
-    fun randomPosition(min: Float = -1.0f, max: Float = 1.0f): Position {
-        fun randomFloat() = Random.nextFloat() * (max - min) + min
-        return Position(randomFloat(), randomFloat(), randomFloat())
+
+    fun onRemoveNode(call: MethodCall, result: MethodChannel.Result) {
+        try {
+            Log.i(TAG, "removeNode")
+            val args = call.arguments as? Map<String, *>
+            if (args == null) {
+                result.error("INVALID_ARGUMENTS", "Expected a map argument", null)
+                return
+            }
+            val id = args["nodeId"] as? String ?: ""
+            val node = _controller.removeNode(nodeId = id)
+            result.success(null)
+        } catch (e: Exception) {
+            result.error("REMOVE_ALL_NODES_ERROR", e.message ?: "Unknown error", null)
+        }
     }
+
+    fun onRemoveAllNodes(call: MethodCall, result: MethodChannel.Result) {
+        try {
+            Log.i(TAG, "removeAllNodes")
+            val node = _controller.removeAllNodes()
+            result.success(null)
+        } catch (e: Exception) {
+            result.error("REMOVE_ALL_NODES_ERROR", e.message ?: "Unknown error", null)
+        }
+    }
+
+
 }
 
 

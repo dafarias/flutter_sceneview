@@ -19,6 +19,10 @@ class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
   final _flutterSceneviewPlugin = FlutterSceneview();
 
+  late final ARSceneController _controller;
+
+  final List<Node> placedNodes = [];
+
   @override
   void initState() {
     super.initState();
@@ -56,19 +60,54 @@ class _MyAppState extends State<MyApp> {
         appBar: AppBar(title: const Text('Plugin example app')),
         body: Center(
           child: SceneView(
-            onViewCreated: (p0) {
-              Future.delayed(Duration(seconds: 3), () {
-                p0.addTestNode();
-              });
+            onViewCreated: (controller) => _controller = controller,
+          ),
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            placeNode();
+          },
+          child: Icon(Icons.place),
+        ),
 
-              Future.delayed(Duration(seconds: 8), () {
-                p0.addTestNode(fileName: "golf_flag.glb");
-              });
+        bottomSheet: SizedBox(
+          height: 60,
+          child: Row(
+            children: <Widget>[
+              ElevatedButton(
+                onPressed: () {
+                  removeById(nodeId: placedNodes.firstOrNull?.nodeId ?? "");
+                },
+                child: Text('Remove by id'),
+              ),
 
-            },
+              SizedBox(width: 20),
+
+              ElevatedButton(onPressed: onRemoveAll, child: Text('Remove all')),
+            ],
           ),
         ),
       ),
     );
+  }
+
+  void placeNode() async {
+    final node = await _flutterSceneviewPlugin.addNode(
+      x: 0,
+      y: 0,
+      fileName: 'golf_flag.glb',
+    );
+
+    if (node != null && node.isNotEmpty) {
+      placedNodes.add(node);
+    }
+  }
+
+  void removeById({required String nodeId}) {
+    _controller.removeNode(nodeId: nodeId);
+  }
+
+  void onRemoveAll() {
+    _controller.removeAllNodes();
   }
 }

@@ -11,11 +11,18 @@ dependencies:
   flutter:
     sdk: flutter
   plugin_platform_interface: ^2.0.2
+  json_annotation: ^4.9.0
+  vector_math: ^2.1.4
+  freezed_annotation: ^3.1.0
+  
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  json_serializable: ^6.9.5
+  build_runner: ^2.5.4
+  freezed: ^3.1.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

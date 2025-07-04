@@ -1,5 +1,5 @@
+import 'package:flutter_sceneview/flutter_sceneview.dart';
 import 'package:flutter_sceneview/src/flutter_sceneview.dart';
-import 'package:flutter_sceneview/src/views/node.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_sceneview/flutter_sceneview_platform_interface.dart';
 import 'package:flutter_sceneview/flutter_sceneview_method_channel.dart';
@@ -10,16 +10,6 @@ class MockFlutterSceneviewPlatform
     implements FlutterSceneviewPlatform {
   @override
   Future<String?> getPlatformVersion() => Future.value('42');
-
-  @override
-  void addNode(SceneViewNode node) {
-    // TODO: implement addNode
-  }
-
-  @override
-  void addTestNode({String? fileName}) {
-    // TODO: implement addTestNode
-  }
 
   @override
   void dispose(int sceneId) {
@@ -41,6 +31,24 @@ class MockFlutterSceneviewPlatform
   @override
   Future<bool?> checkPermissions() {
     // TODO: implement checkPermissions
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Node> addNode({double x = 0, double y = 0, String? fileName}) {
+    // TODO: implement addNode
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> removeAllNodes() {
+    // TODO: implement removeAllNodes
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<void> removeNode({required String nodeId}) {
+    // TODO: implement removeNode
     throw UnimplementedError();
   }
 }
