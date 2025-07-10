@@ -98,8 +98,9 @@ class _MyAppState extends State<MyApp> {
       fileName: 'golf_flag.glb',
     );
 
+    //Todo: Fix node placement and removal logic
     if (node != null && node.isNotEmpty) {
-      placedNodes.add(node);
+       placedNodes.add(node);
     }
   }
 

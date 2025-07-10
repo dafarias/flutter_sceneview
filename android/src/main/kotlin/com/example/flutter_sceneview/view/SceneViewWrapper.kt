@@ -1,15 +1,14 @@
 package com.example.flutter_sceneview.view
 
-import android.app.Activity
 import android.content.Context
 import android.util.Log
 import android.view.View
 import android.widget.FrameLayout
 import androidx.lifecycle.Lifecycle
 import com.example.flutter_sceneview.FlutterSceneviewPlugin
+import com.example.flutter_sceneview.ar.ARScene
 import com.example.flutter_sceneview.controller.ARController
 import com.example.flutter_sceneview.result.NodeResult
-import com.google.android.filament.gltfio.FilamentInstance
 import com.google.ar.core.Config
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
@@ -17,21 +16,9 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.platform.PlatformView
 import io.github.sceneview.ar.ARSceneView
-import io.github.sceneview.ar.arcore.createAnchorOrNull
-import io.github.sceneview.ar.node.AnchorNode
-import io.github.sceneview.ar.scene.PlaneRenderer
-import io.github.sceneview.math.Position
-import io.github.sceneview.math.Transform
-import io.github.sceneview.model.Model
-import io.github.sceneview.model.ModelInstance
-import io.github.sceneview.node.ModelNode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.io.File
-import java.io.FileOutputStream
-import kotlin.io.path.toPath
-import kotlin.random.Random
 
 
 class SceneViewWrapper(
@@ -72,7 +59,7 @@ class SceneViewWrapper(
                             true -> Config.DepthMode.AUTOMATIC
                             else -> Config.DepthMode.DISABLED
                         }
-//                    config.instantPlacementMode = Config.InstantPlacementMode.LOCAL_Y_UP
+                    config.instantPlacementMode = Config.InstantPlacementMode.LOCAL_Y_UP
                     config.lightEstimationMode = Config.LightEstimationMode.ENVIRONMENTAL_HDR
                 }
 
@@ -89,6 +76,9 @@ class SceneViewWrapper(
                     Log.i(TAG, "onTrackingFailureChanged: $reason");
                 }
             }
+
+            ARScene(sceneView).addSunLight()
+
 
             sceneView.layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
@@ -265,7 +255,6 @@ class SceneViewWrapper(
             result.error("REMOVE_ALL_NODES_ERROR", e.message ?: "Unknown error", null)
         }
     }
-
 
 }
 
