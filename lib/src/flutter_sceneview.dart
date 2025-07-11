@@ -1,4 +1,5 @@
 import 'package:flutter_sceneview/flutter_sceneview_platform_interface.dart';
+import 'package:flutter_sceneview/src/entities/arcore_shape.dart';
 import 'package:flutter_sceneview/src/models/nodes/node.dart';
 
 // The methods defined here are the ones exposed into the
@@ -27,5 +28,9 @@ class FlutterSceneview {
       y: y,
       fileName: fileName,
     );
+  }
+
+  Future<Node?> addShapeNode(ArCoreShape shape) {
+    return FlutterSceneviewPlatform.instance.addShapeNode(shape);
   }
 }

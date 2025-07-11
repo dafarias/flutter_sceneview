@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_sceneview/flutter_sceneview.dart';
+import 'package:vector_math/vector_math.dart';
 
 void main() {
   runApp(const MyApp());
@@ -65,7 +66,8 @@ class _MyAppState extends State<MyApp> {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
-            placeNode();
+            // placeNode();
+            placeShapeNode();
           },
           child: Icon(Icons.place),
         ),
@@ -99,6 +101,17 @@ class _MyAppState extends State<MyApp> {
     );
 
     if (node != null && node.isNotEmpty) {
+      placedNodes.add(node);
+    }
+  }
+
+  void placeShapeNode() async {
+    final node = Node(position: Vector3(0, -1, 0), rotation: Vector3(0, 0, 0));
+    final material = ArCoreMaterial(color: Color.fromARGB(255, 255, 255, 255));
+    final sphere = ArCoreSphere(node, material: material, radius: 0.05);
+    final sphereNode = await _flutterSceneviewPlugin.addShapeNode(sphere);
+
+    if(sphereNode != null) {
       placedNodes.add(node);
     }
   }

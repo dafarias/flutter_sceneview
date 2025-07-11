@@ -1,6 +1,5 @@
 package com.example.flutter_sceneview.view
 
-import android.app.Activity
 import android.content.Context
 import android.util.Log
 import android.view.View
@@ -8,8 +7,10 @@ import android.widget.FrameLayout
 import androidx.lifecycle.Lifecycle
 import com.example.flutter_sceneview.FlutterSceneviewPlugin
 import com.example.flutter_sceneview.controller.ARController
+import com.example.flutter_sceneview.entities.flutter.FlutterArCoreShapeNode
 import com.example.flutter_sceneview.result.NodeResult
-import com.google.android.filament.gltfio.FilamentInstance
+import com.google.android.filament.EntityManager
+import com.google.android.filament.LightManager
 import com.google.ar.core.Config
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
@@ -17,22 +18,9 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.platform.PlatformView
 import io.github.sceneview.ar.ARSceneView
-import io.github.sceneview.ar.arcore.createAnchorOrNull
-import io.github.sceneview.ar.node.AnchorNode
-import io.github.sceneview.ar.scene.PlaneRenderer
-import io.github.sceneview.math.Position
-import io.github.sceneview.math.Transform
-import io.github.sceneview.model.Model
-import io.github.sceneview.model.ModelInstance
-import io.github.sceneview.node.ModelNode
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import java.io.File
-import java.io.FileOutputStream
-import kotlin.io.path.toPath
-import kotlin.random.Random
-
 
 class SceneViewWrapper(
     private val context: Context,
@@ -62,28 +50,47 @@ class SceneViewWrapper(
     init {
         try {
             Log.i(TAG, "init")
-            sceneView = ARSceneView(context, sharedLifecycle = lifecycle)
+            sceneView = ARSceneView(
+                context,
+                sharedLifecycle = lifecycle,
+            )
             sceneView.apply {
-//                 Configure AR session settings
-                sessionConfiguration = { session, config ->
-                    // Enable depth if supported on the device
+                configureSession { session, config ->
                     config.depthMode =
                         when (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC)) {
                             true -> Config.DepthMode.AUTOMATIC
                             else -> Config.DepthMode.DISABLED
                         }
+                    config.lightEstimationMode = Config.LightEstimationMode.ENVIRONMENTAL_HDR
 //                    config.instantPlacementMode = Config.InstantPlacementMode.LOCAL_Y_UP
                     config.lightEstimationMode = Config.LightEstimationMode.ENVIRONMENTAL_HDR
                 }
 
                 onSessionResumed = { session ->
-                    Log.i(TAG, "onSessionCreated")
+                    Log.i(TAG, "onSessionResumed")
                 }
                 onSessionFailed = { exception ->
                     Log.e(TAG, "onSessionFailed : $exception")
                 }
                 onSessionCreated = { session ->
                     Log.i(TAG, "onSessionCreated")
+
+                    val engine = sceneView.engine
+                    val entityManager = EntityManager.get()
+                    val sunEntity = entityManager.create()// Create the SUN light using the Builder
+                    LightManager.Builder(LightManager.Type.SUN)
+                        .castShadows(true) // enable shadows if you want realism
+                        .color(1.0f, 1.0f, 1.0f) // white light
+                        .intensity(100_000.0f) // sun daylight ~100-120k lux
+                        .direction(0.0f, -1.0f, 0.0f) // downward direction: Y negative
+                        .sunAngularRadius(0.53f) // ~sun radius in degrees
+                        .sunHaloSize(10.0f).sunHaloFalloff(80.0f)
+                        .build(engine, sunEntity)// OPTIONAL: Adjust direction dynamically if needed
+
+                    val lightManager = engine.lightManager
+                    val instance = lightManager.getInstance(sunEntity)
+                    lightManager.setDirection(instance, -0.3f, -1.0f, -0.4f) // ensure downwards
+                    sceneView.scene.addEntity(sunEntity)
                 }
                 onTrackingFailureChanged = { reason ->
                     Log.i(TAG, "onTrackingFailureChanged: $reason");
@@ -191,6 +198,13 @@ class SceneViewWrapper(
                 return
             }
 
+            "addShapeNode" -> {
+                _mainScope.launch {
+                    onAddShapeNode(call, result)
+                }
+                return
+            }
+
             "removeNode" -> {
                 onRemoveNode(call, result)
                 return
@@ -204,6 +218,26 @@ class SceneViewWrapper(
             else -> result.notImplemented()
         }
     }
+
+    // TODO: remove
+//    fun placeTestShapeNode() {
+//        val sphereNode = SphereNode(
+//            sceneView.engine,
+//            radius = 0.05f,
+//            materialInstance = sceneView.materialLoader.createColorInstance(
+//                android.graphics.Color.WHITE
+//            ),
+//        )
+//
+//        sphereNode.name = "asdf"
+//
+//        sceneView.addChildNode(sphereNode)
+//        Log.i(
+//            TAG,
+//            "Sphere Node: [pos: ${sphereNode.position} / scale: ${sphereNode.scale} / isVisible: ${sphereNode.isVisible} / name: ${sphereNode.name} ]"
+//        )
+//        Log.i(TAG, "Sphere Node parent is SceneView ${sphereNode.parent == sceneView}")
+//    }
 
     fun onAddNode(call: MethodCall, result: MethodChannel.Result) {
         try {
@@ -239,6 +273,44 @@ class SceneViewWrapper(
         }
     }
 
+    private fun onAddShapeNode(call: MethodCall, result: MethodChannel.Result) {
+        try {
+            val args = call.arguments as? Map<String, *>
+
+            if (args == null) {
+                result.error(
+                    "INVALID_ARGUMENTS",
+                    "Expected a map with node position",
+                    null
+                )
+                return
+            }
+
+            _mainScope.launch {
+                try {
+                    val flutterShapeNode = FlutterArCoreShapeNode(args)
+                    val nodeResult = _controller.addShapeNode(flutterShapeNode)
+                    when (nodeResult) {
+                        is NodeResult.Placed -> {
+                            result.success(nodeResult.node.toMap())
+                        }
+
+                        is NodeResult.Failed -> {
+                            result.error("ADD_SHAPE_NODE_FAILED", nodeResult.reason, null)
+                        }
+                    }
+                } catch (e: Exception) {
+                    result.error("ADD_SHAPE_NODE_ERROR", e.message ?: "Unknown error",
+                        e.stackTraceToString()
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to add shape node: ${e.message}")
+            result.error("ADD_SHAPE_NODE_ERROR", e.message ?: "Unknown error", null)
+        }
+    }
+
 
     fun onRemoveNode(call: MethodCall, result: MethodChannel.Result) {
         try {
@@ -265,8 +337,6 @@ class SceneViewWrapper(
             result.error("REMOVE_ALL_NODES_ERROR", e.message ?: "Unknown error", null)
         }
     }
-
-
 }
 
 

@@ -1,4 +1,5 @@
 import 'package:flutter_sceneview/flutter_sceneview.dart';
+import 'package:flutter_sceneview/src/entities/arcore_shape.dart';
 import 'package:flutter_sceneview/src/flutter_sceneview.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_sceneview/flutter_sceneview_platform_interface.dart';
@@ -49,6 +50,12 @@ class MockFlutterSceneviewPlatform
   @override
   Future<void> removeNode({required String nodeId}) {
     // TODO: implement removeNode
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Node?> addShapeNode(ArCoreShape shape) {
+    // TODO: implement addShapeNode
     throw UnimplementedError();
   }
 }
