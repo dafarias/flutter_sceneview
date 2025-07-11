@@ -13,6 +13,7 @@ class MethodChannelFlutterSceneview extends FlutterSceneviewPlatform {
   /// The method channel used to interact with the native platform.
   @visibleForTesting
   final methodChannel = const MethodChannel('flutter_sceneview');
+  final arViewChannel = MethodChannel('ar_view_wrapper');
 
   @override
   Future<String?> getPlatformVersion() async {
@@ -27,10 +28,6 @@ class MethodChannelFlutterSceneview extends FlutterSceneviewPlatform {
     final isReady = await methodChannel.invokeMethod<bool>('isReady');
     return isReady;
   }
-  @override
-  Future<Node?> addNode({double x = 0, double y = 0, String? fileName}) async {
-    return await ARSceneController.instance.addNode(x: x, y: y, fileName: fileName);
-  }
 
   @override
   Future<bool?> checkPermissions() async {
@@ -38,6 +35,11 @@ class MethodChannelFlutterSceneview extends FlutterSceneviewPlatform {
       'checkPermissions',
     );
     return hasCameraPermissions;
+  }
+
+  @override
+  Future<Node?> addNode({double x = 0, double y = 0, String? fileName}) async {
+    return await ARSceneController.instance.addNode(x: x, y: y, fileName: fileName);
   }
 
   @override

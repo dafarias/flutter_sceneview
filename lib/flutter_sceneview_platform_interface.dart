@@ -58,11 +58,6 @@ abstract class FlutterSceneviewPlatform extends PlatformInterface {
     throw UnimplementedError("performHitTest() has not been implemented");
   }
 
-
-  Future<List<ArCoreHitTestResult>> performHitTest(double x, double y) {
-    throw UnimplementedError("performHitTest() has not been implemented");
-  }
-
   void dispose(int sceneId) {
     throw UnimplementedError('dispose() has not been implemented.');
   }
