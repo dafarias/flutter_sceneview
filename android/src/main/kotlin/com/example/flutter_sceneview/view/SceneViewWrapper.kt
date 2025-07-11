@@ -9,7 +9,11 @@ import com.example.flutter_sceneview.FlutterSceneviewPlugin
 import com.example.flutter_sceneview.ar.ARScene
 import com.example.flutter_sceneview.controller.ARController
 import com.example.flutter_sceneview.result.NodeResult
+import com.example.flutter_sceneview.entities.flutter.FlutterArCoreHitTestResult
 import com.google.ar.core.Config
+import com.google.ar.core.Plane
+import com.google.ar.core.Pose
+import com.google.ar.core.TrackingState
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
@@ -191,6 +195,40 @@ class SceneViewWrapper(
                 return
             }
 
+            "performHitTest" -> {
+                try {
+                    val coordX = call.argument<Double>("x")
+                    val coordY = call.argument<Double>("y")
+
+                    val x = coordX?.toFloat()
+                    val y = coordY?.toFloat()
+
+                    val frame = sceneView.frame
+                    if (frame != null) {
+                        if(frame.camera.trackingState == TrackingState.TRACKING) {
+                            val hitList = frame.hitTest(x!!, y!!)
+                            val list = ArrayList<Map<String, Any>>()
+                            for (hit in hitList) {
+                                val trackable = hit.trackable
+                                if (trackable is Plane && trackable.isPoseInPolygon(hit.hitPose)) {
+                                    hit.hitPose
+                                    val distance: Float = hit.distance
+                                    val translation = hit.hitPose.translation
+                                    val rotation = hit.hitPose.rotationQuaternion
+                                    val flutterArCoreHitTestResult = FlutterArCoreHitTestResult(distance, translation, rotation)
+                                    val hitTestResult = flutterArCoreHitTestResult.toMap()
+                                    list.add(hitTestResult)
+                                }
+                            }
+                            Log.i("HitTestResult", "$list")
+                            result.success(list)
+                        }
+                    }
+
+                } catch (e: Exception) {
+                    result.error("PerformHitTest", e.message, null)
+                }
+            }
             else -> result.notImplemented()
         }
     }

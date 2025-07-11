@@ -84,6 +84,12 @@ class _MyAppState extends State<MyApp> {
               SizedBox(width: 20),
 
               ElevatedButton(onPressed: onRemoveAll, child: Text('Remove all')),
+              SizedBox(width: 20),
+
+              ElevatedButton(
+                onPressed: _handleHitTest,
+                child: Text('Hit test'),
+              ),
             ],
           ),
         ),
@@ -100,7 +106,7 @@ class _MyAppState extends State<MyApp> {
 
     //Todo: Fix node placement and removal logic
     if (node != null && node.isNotEmpty) {
-       placedNodes.add(node);
+      placedNodes.add(node);
     }
   }
 
@@ -110,5 +116,21 @@ class _MyAppState extends State<MyApp> {
 
   void onRemoveAll() {
     _controller.removeAllNodes();
+  }
+
+  void _handleHitTest() async {
+    final results = await _flutterSceneviewPlugin.performHitTest(300, 300);
+
+    // TODO: replace with a shape node placement instead of prints
+    if(results.isEmpty) {
+      print('[Flutter] No hit test results');
+      return;
+    }
+
+    print('[Flutter] HitTestResults distance: ${results.first.distance}');
+    print(
+      '[Flutter] HitTestResults translation: ${results.first.pose.translation}',
+    );
+    print('[Flutter] HitTestResults rotation: ${results.first.pose.rotation}');
   }
 }
