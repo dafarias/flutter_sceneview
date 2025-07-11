@@ -1,8 +1,10 @@
 package com.example.flutter_sceneview.controller
 
 import android.content.Context
+import android.graphics.Color
 import android.util.Log
 import com.example.flutter_sceneview.FlutterSceneviewPlugin
+import com.example.flutter_sceneview.entities.flutter.FlutterArCoreShapeNode
 import com.example.flutter_sceneview.models.NodeInfo
 import com.example.flutter_sceneview.models.render.RenderInfo
 import com.example.flutter_sceneview.result.NodeResult
@@ -10,21 +12,18 @@ import com.google.ar.core.Plane
 import com.google.ar.core.TrackingState
 import io.github.sceneview.ar.ARSceneView
 import io.github.sceneview.math.Position
-import io.github.sceneview.model.ModelInstance
 import io.github.sceneview.node.ModelNode
 import io.github.sceneview.loaders.ModelLoader
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
-import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterAssets
 import io.flutter.plugin.common.MethodChannel
 import io.github.sceneview.ar.arcore.createAnchorOrNull
+import io.github.sceneview.math.Scale
 import io.github.sceneview.model.Model
 import java.io.FileOutputStream
 import java.util.UUID
-import kotlin.random.Random
 
 class ARController(
     private val context: Context,
@@ -186,6 +185,31 @@ class ARController(
             Log.e(TAG, "Failed to load model: ${e.message}")
             throw Exception("Failed to create or to load model instance from $fileName: ${e.message}")
         }
+    }
+
+    fun addShapeNode(shape: FlutterArCoreShapeNode): NodeResult {
+        val material = sceneView.materialLoader.createColorInstance(Color.WHITE)
+        val shapeNode = shape.build(sceneView.engine, material)
+
+        if (shapeNode != null) {
+            shapeNode.name = UUID.randomUUID().toString()
+            shapeNode.position = shape.position!!
+            shapeNode.rotation = shape.rotation!!
+            shapeNode.scale = Scale(1f, 1f, 1f) // TODO
+
+            sceneView.addChildNode(shapeNode)
+
+            val nodeInfo = NodeInfo(
+                nodeId = shapeNode.name!!,
+                position = shapeNode.position,
+                rotation = shapeNode.rotation,
+                scale = 1f, // TODO: replace this with a Float3 instead of Float
+            )
+
+            return NodeResult.Placed(nodeInfo)
+        }
+
+        return NodeResult.Failed("Could not place shape node")
     }
 
     //todo: Return success on node removal

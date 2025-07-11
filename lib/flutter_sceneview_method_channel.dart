@@ -3,6 +3,7 @@ import 'dart:ffi';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_sceneview/flutter_sceneview.dart';
+import 'package:flutter_sceneview/src/entities/arcore_shape.dart';
 //todo: add import to barrel file
 import 'package:flutter_sceneview/src/entities/arcore_hit_test_result.dart';
 
@@ -30,16 +31,21 @@ class MethodChannelFlutterSceneview extends FlutterSceneviewPlatform {
   }
 
   @override
+  Future<Node?> addNode({double x = 0, double y = 0, String? fileName}) async {
+    return await ARSceneController.instance.addNode(x: x, y: y, fileName: fileName);
+  }
+
+  @override
+  Future<Node?> addShapeNode(ArCoreShape shape) async {
+    return await ARSceneController.instance.addShapeNode(shape);
+  }
+
+  @override
   Future<bool?> checkPermissions() async {
     final hasCameraPermissions = await methodChannel.invokeMethod<bool>(
       'checkPermissions',
     );
     return hasCameraPermissions;
-  }
-
-  @override
-  Future<Node?> addNode({double x = 0, double y = 0, String? fileName}) async {
-    return await ARSceneController.instance.addNode(x: x, y: y, fileName: fileName);
   }
 
   @override

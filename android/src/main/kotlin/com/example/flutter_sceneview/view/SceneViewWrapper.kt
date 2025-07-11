@@ -8,7 +8,10 @@ import androidx.lifecycle.Lifecycle
 import com.example.flutter_sceneview.FlutterSceneviewPlugin
 import com.example.flutter_sceneview.ar.ARScene
 import com.example.flutter_sceneview.controller.ARController
+import com.example.flutter_sceneview.entities.flutter.FlutterArCoreShapeNode
 import com.example.flutter_sceneview.result.NodeResult
+import com.google.android.filament.EntityManager
+import com.google.android.filament.LightManager
 import com.example.flutter_sceneview.entities.flutter.FlutterArCoreHitTestResult
 import com.google.ar.core.Config
 import com.google.ar.core.Plane
@@ -68,7 +71,7 @@ class SceneViewWrapper(
                 }
 
                 onSessionResumed = { session ->
-                    Log.i(TAG, "onSessionCreated")
+                    Log.i(TAG, "onSessionResumed")
                 }
                 onSessionFailed = { exception ->
                     Log.e(TAG, "onSessionFailed : $exception")
@@ -185,6 +188,13 @@ class SceneViewWrapper(
                 return
             }
 
+            "addShapeNode" -> {
+                _mainScope.launch {
+                    onAddShapeNode(call, result)
+                }
+                return
+            }
+
             "removeNode" -> {
                 onRemoveNode(call, result)
                 return
@@ -196,6 +206,7 @@ class SceneViewWrapper(
             }
 
             "performHitTest" -> {
+                // TODO: put this into a method for consistency
                 try {
                     val coordX = call.argument<Double>("x")
                     val coordY = call.argument<Double>("y")
@@ -267,6 +278,44 @@ class SceneViewWrapper(
         }
     }
 
+    private fun onAddShapeNode(call: MethodCall, result: MethodChannel.Result) {
+        try {
+            val args = call.arguments as? Map<String, *>
+
+            if (args == null) {
+                result.error(
+                    "INVALID_ARGUMENTS",
+                    "Expected a map with node position",
+                    null
+                )
+                return
+            }
+
+            _mainScope.launch {
+                try {
+                    val flutterShapeNode = FlutterArCoreShapeNode(args)
+                    val nodeResult = _controller.addShapeNode(flutterShapeNode)
+                    when (nodeResult) {
+                        is NodeResult.Placed -> {
+                            result.success(nodeResult.node.toMap())
+                        }
+
+                        is NodeResult.Failed -> {
+                            result.error("ADD_SHAPE_NODE_FAILED", nodeResult.reason, null)
+                        }
+                    }
+                } catch (e: Exception) {
+                    result.error("ADD_SHAPE_NODE_ERROR", e.message ?: "Unknown error",
+                        e.stackTraceToString()
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to add shape node: ${e.message}")
+            result.error("ADD_SHAPE_NODE_ERROR", e.message ?: "Unknown error", null)
+        }
+    }
+
 
     fun onRemoveNode(call: MethodCall, result: MethodChannel.Result) {
         try {
@@ -293,7 +342,6 @@ class SceneViewWrapper(
             result.error("REMOVE_ALL_NODES_ERROR", e.message ?: "Unknown error", null)
         }
     }
-
 }
 
 

@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_sceneview/flutter_sceneview.dart';
+import 'package:flutter_sceneview/src/entities/arcore_shape.dart';
 import 'package:flutter_sceneview/src/logging/node_logs.dart';
 import 'package:flutter_sceneview/src/utils/scene_render.dart';
 
@@ -86,6 +87,12 @@ class ARSceneController {
     }
 
     return Node.empty;
+  }
+
+  Future<Node> addShapeNode(ArCoreShape shape) async {
+    final shapeMap = shape.toMap();
+    final result = await _arChannel.invokeMethod('addShapeNode', shapeMap);
+    return Node.fromJson(Map<String, dynamic>.from(result));
   }
 
   // TODO: Return value if node was succesfully removed so people can

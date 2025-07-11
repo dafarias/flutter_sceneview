@@ -3,6 +3,7 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_sceneview/flutter_sceneview.dart';
+import 'package:vector_math/vector_math.dart';
 
 void main() {
   runApp(const MyApp());
@@ -110,6 +111,17 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
+  void placeShapeNode(Vector3 position, Vector3 rotation) async {
+    final node = Node(position: position, rotation: rotation);
+    final material = ArCoreMaterial(color: Color.fromARGB(255, 255, 255, 255));
+    final sphere = ArCoreSphere(node, material: material, radius: 0.05);
+    final sphereNode = await _flutterSceneviewPlugin.addShapeNode(sphere);
+
+    if (sphereNode != null) {
+      placedNodes.add(node);
+    }
+  }
+
   void removeById({required String nodeId}) {
     _controller.removeNode(nodeId: nodeId);
   }
@@ -119,18 +131,21 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _handleHitTest() async {
-    final results = await _flutterSceneviewPlugin.performHitTest(300, 300);
+    final results = await _flutterSceneviewPlugin.performHitTest(500, 500);
 
-    // TODO: replace with a shape node placement instead of prints
-    if(results.isEmpty) {
+    if (results.isEmpty) {
       print('[Flutter] No hit test results');
       return;
     }
 
-    print('[Flutter] HitTestResults distance: ${results.first.distance}');
-    print(
-      '[Flutter] HitTestResults translation: ${results.first.pose.translation}',
+    final hitTestResult = results.first.pose;
+    placeShapeNode(
+      hitTestResult.translation,
+      Vector3(
+        hitTestResult.rotation.x,
+        hitTestResult.rotation.y,
+        hitTestResult.rotation.z,
+      ),
     );
-    print('[Flutter] HitTestResults rotation: ${results.first.pose.rotation}');
   }
 }
