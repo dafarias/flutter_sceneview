@@ -19,6 +19,10 @@ class _MyAppState extends State<MyApp> {
   String _platformVersion = 'Unknown';
   final _flutterSceneviewPlugin = FlutterSceneview();
 
+  late final ARSceneController _controller;
+
+  final List<Node> placedNodes = [];
+
   @override
   void initState() {
     super.initState();
@@ -52,25 +56,67 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     debugPrint('Running on: $_platformVersion\n');
     return MaterialApp(
-      home: SafeArea(
-        child: Scaffold(
-          appBar: AppBar(title: const Text('Plugin example app')),
-          // body: Center(child: SceneView()),
-          body: Stack(
-            children: [
-              SceneView(),
-              Align(
-                alignment: Alignment.bottomCenter,
-                child: ElevatedButton(
+      home: Scaffold(
+        appBar: AppBar(title: const Text('Plugin example app')),
+        body: Center(
+          child: SceneView(
+            onViewCreated: (controller) => _controller = controller,
+          ),
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () {
+            placeNode();
+          },
+          child: Icon(Icons.place),
+        ),
+
+        bottomSheet: SizedBox(
+          height: 60,
+          child: Row(
+            children: <Widget>[
+              ElevatedButton(
+                onPressed: () {
+                  removeById(nodeId: placedNodes.firstOrNull?.nodeId ?? "");
+                },
+                child: Text('Remove by id'),
+              ),
+
+              SizedBox(width: 20),
+
+              ElevatedButton(onPressed: onRemoveAll, child: Text('Remove all')),
+              SizedBox(width: 20),
+
+              ElevatedButton(
                   onPressed: _handleHitTest,
                   child: Text('Hit test'),
                 ),
-              ),
+
             ],
           ),
         ),
       ),
     );
+  }
+
+  void placeNode() async {
+    final node = await _flutterSceneviewPlugin.addNode(
+      x: 0,
+      y: 0,
+      fileName: 'golf_flag.glb',
+    );
+
+    //Todo: Fix node placement and removal logic
+    if (node != null && node.isNotEmpty) {
+       placedNodes.add(node);
+    }
+  }
+
+  void removeById({required String nodeId}) {
+    _controller.removeNode(nodeId: nodeId);
+  }
+
+  void onRemoveAll() {
+    _controller.removeAllNodes();
   }
 
   void _handleHitTest() async {

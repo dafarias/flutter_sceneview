@@ -41,10 +41,13 @@ android {
     sourceSets {
         main.java.srcDirs += "src/main/kotlin"
         test.java.srcDirs += "src/test/kotlin"
+        main {
+            assets.srcDirs += 'src/main/assets'
+        }
     }
 
     defaultConfig {
-        minSdk = 24
+        minSdk = 26
     }
 
     dependencies {
@@ -64,4 +67,6 @@ android {
             }
         }
     }
+    ndkVersion '27.0.12077973'
+    buildToolsVersion '36.0.0 rc3'
 }

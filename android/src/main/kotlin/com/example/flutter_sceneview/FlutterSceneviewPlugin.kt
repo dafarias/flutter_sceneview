@@ -7,6 +7,7 @@ import androidx.lifecycle.LifecycleOwner
 import com.example.flutter_sceneview.handlers.PermissionsHandler
 import com.example.flutter_sceneview.factory.ScenePlatformViewFactory
 import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterAssets
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.MethodCall
@@ -28,11 +29,16 @@ class FlutterSceneviewPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, A
     /// when the Flutter Engine is detached from the Activity
     private lateinit var channel: MethodChannel
 
+    companion object {
+        var flutterAssets: FlutterAssets? = null
+    }
+
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         try {
             channel = MethodChannel(flutterPluginBinding.binaryMessenger, "flutter_sceneview")
             channel.setMethodCallHandler(this)
             this.flutterPluginBinding = flutterPluginBinding
+            flutterAssets = flutterPluginBinding.flutterAssets
             Log.i(TAG, "onAttachedToEngine")
         } catch (e: Exception) {
             Log.e(TAG, "onAttachedToEngine", e)
