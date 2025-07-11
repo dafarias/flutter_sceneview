@@ -6,6 +6,7 @@ import android.view.View
 import android.widget.FrameLayout
 import androidx.lifecycle.Lifecycle
 import com.example.flutter_sceneview.FlutterSceneviewPlugin
+import com.example.flutter_sceneview.ar.ARScene
 import com.example.flutter_sceneview.controller.ARController
 import com.example.flutter_sceneview.entities.flutter.FlutterArCoreShapeNode
 import com.example.flutter_sceneview.result.NodeResult
@@ -21,6 +22,7 @@ import io.github.sceneview.ar.ARSceneView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+
 
 class SceneViewWrapper(
     private val context: Context,
@@ -50,18 +52,17 @@ class SceneViewWrapper(
     init {
         try {
             Log.i(TAG, "init")
-            sceneView = ARSceneView(
-                context,
-                sharedLifecycle = lifecycle,
-            )
+            sceneView = ARSceneView(context, sharedLifecycle = lifecycle)
             sceneView.apply {
-                configureSession { session, config ->
+//                 Configure AR session settings
+                sessionConfiguration = { session, config ->
+                    // Enable depth if supported on the device
                     config.depthMode =
                         when (session.isDepthModeSupported(Config.DepthMode.AUTOMATIC)) {
                             true -> Config.DepthMode.AUTOMATIC
                             else -> Config.DepthMode.DISABLED
                         }
-//                    config.instantPlacementMode = Config.InstantPlacementMode.LOCAL_Y_UP
+                    config.instantPlacementMode = Config.InstantPlacementMode.LOCAL_Y_UP
                     config.lightEstimationMode = Config.LightEstimationMode.ENVIRONMENTAL_HDR
                 }
 
@@ -73,28 +74,14 @@ class SceneViewWrapper(
                 }
                 onSessionCreated = { session ->
                     Log.i(TAG, "onSessionCreated")
-
-                    val engine = sceneView.engine
-                    val entityManager = EntityManager.get()
-                    val sunEntity = entityManager.create()// Create the SUN light using the Builder
-                    LightManager.Builder(LightManager.Type.SUN)
-                        .castShadows(true) // enable shadows if you want realism
-                        .color(1.0f, 1.0f, 1.0f) // white light
-                        .intensity(100_000.0f) // sun daylight ~100-120k lux
-                        .direction(0.0f, -1.0f, 0.0f) // downward direction: Y negative
-                        .sunAngularRadius(0.53f) // ~sun radius in degrees
-                        .sunHaloSize(10.0f).sunHaloFalloff(80.0f)
-                        .build(engine, sunEntity)// OPTIONAL: Adjust direction dynamically if needed
-
-                    val lightManager = engine.lightManager
-                    val instance = lightManager.getInstance(sunEntity)
-                    lightManager.setDirection(instance, -0.3f, -1.0f, -0.4f) // ensure downwards
-                    sceneView.scene.addEntity(sunEntity)
                 }
                 onTrackingFailureChanged = { reason ->
                     Log.i(TAG, "onTrackingFailureChanged: $reason");
                 }
             }
+
+            ARScene(sceneView).addSunLight()
+
 
             sceneView.layoutParams = FrameLayout.LayoutParams(
                 FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
