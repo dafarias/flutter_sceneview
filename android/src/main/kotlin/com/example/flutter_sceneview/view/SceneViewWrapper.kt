@@ -61,7 +61,6 @@ class SceneViewWrapper(
                             true -> Config.DepthMode.AUTOMATIC
                             else -> Config.DepthMode.DISABLED
                         }
-                    config.lightEstimationMode = Config.LightEstimationMode.ENVIRONMENTAL_HDR
 //                    config.instantPlacementMode = Config.InstantPlacementMode.LOCAL_Y_UP
                     config.lightEstimationMode = Config.LightEstimationMode.ENVIRONMENTAL_HDR
                 }
@@ -218,26 +217,6 @@ class SceneViewWrapper(
             else -> result.notImplemented()
         }
     }
-
-    // TODO: remove
-//    fun placeTestShapeNode() {
-//        val sphereNode = SphereNode(
-//            sceneView.engine,
-//            radius = 0.05f,
-//            materialInstance = sceneView.materialLoader.createColorInstance(
-//                android.graphics.Color.WHITE
-//            ),
-//        )
-//
-//        sphereNode.name = "asdf"
-//
-//        sceneView.addChildNode(sphereNode)
-//        Log.i(
-//            TAG,
-//            "Sphere Node: [pos: ${sphereNode.position} / scale: ${sphereNode.scale} / isVisible: ${sphereNode.isVisible} / name: ${sphereNode.name} ]"
-//        )
-//        Log.i(TAG, "Sphere Node parent is SceneView ${sphereNode.parent == sceneView}")
-//    }
 
     fun onAddNode(call: MethodCall, result: MethodChannel.Result) {
         try {
