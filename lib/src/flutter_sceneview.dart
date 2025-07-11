@@ -9,6 +9,10 @@ import 'package:flutter_sceneview/src/models/nodes/node.dart';
 // internal implementation, and hidden to the app implementation side
 
 //TODO: Public entry of the plugin
+
+//todo: Move the file to the models folder and fix relative imports
+import 'entities/arcore_hit_test_result.dart';
+
 class FlutterSceneview {
   Future<String?> getPlatformVersion() {
     return FlutterSceneviewPlatform.instance.getPlatformVersion();
@@ -32,5 +36,9 @@ class FlutterSceneview {
 
   Future<Node?> addShapeNode(ArCoreShape shape) {
     return FlutterSceneviewPlatform.instance.addShapeNode(shape);
+  }
+
+  Future<List<ArCoreHitTestResult>> performHitTest(double x, double y) {
+    return FlutterSceneviewPlatform.instance.performHitTest(x, y);
   }
 }

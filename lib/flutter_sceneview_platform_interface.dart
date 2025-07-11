@@ -1,3 +1,5 @@
+//Todo : Same as on test file
+import 'package:flutter_sceneview/src/entities/arcore_hit_test_result.dart';
 import 'package:flutter_sceneview/flutter_sceneview.dart';
 import 'package:flutter_sceneview/src/entities/arcore_shape.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
@@ -54,6 +56,10 @@ abstract class FlutterSceneviewPlatform extends PlatformInterface {
 
   Future<void> removeAllNodes() {
     throw UnimplementedError('removeAllNodes() has not been implemented.');
+  }
+
+  Future<List<ArCoreHitTestResult>> performHitTest(double x, double y) {
+    throw UnimplementedError("performHitTest() has not been implemented");
   }
 
   void dispose(int sceneId) {
