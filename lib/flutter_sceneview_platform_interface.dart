@@ -1,7 +1,4 @@
-//Todo : Same as on test file
-import 'package:flutter_sceneview/src/entities/arcore_hit_test_result.dart';
 import 'package:flutter_sceneview/flutter_sceneview.dart';
-import 'package:flutter_sceneview/src/entities/arcore_shape.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'flutter_sceneview_method_channel.dart';
 
@@ -46,7 +43,7 @@ abstract class FlutterSceneviewPlatform extends PlatformInterface {
     throw UnimplementedError('checkPermissions() has not been implemented.');
   }
 
-  Future<Node?> addShapeNode(ArCoreShape shape) {
+  Future<Node?> addShapeNode(BaseShape shape) {
     throw UnimplementedError('addShapeNode() has not been implemented.');
   }
 
@@ -58,7 +55,7 @@ abstract class FlutterSceneviewPlatform extends PlatformInterface {
     throw UnimplementedError('removeAllNodes() has not been implemented.');
   }
 
-  Future<List<ArCoreHitTestResult>> performHitTest(double x, double y) {
+  Future<List<HitTestResult>> performHitTest(double x, double y) {
     throw UnimplementedError("performHitTest() has not been implemented");
   }
 

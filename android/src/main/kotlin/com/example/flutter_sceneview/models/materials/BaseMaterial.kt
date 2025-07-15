@@ -1,12 +1,16 @@
-package com.example.flutter_sceneview.entities.flutter
+package com.example.flutter_sceneview.models.materials
 
 import android.graphics.Color
 import androidx.annotation.ColorInt
 import androidx.annotation.IntRange
+import kotlin.text.get
 
-class FlutterArCoreMaterial(materialProps: Map<String, *>) {
+
+//TODO: Create model classes as any other class. If needed to create using a map argument
+// then add the methods to map / from map.
+class BaseMaterial(materialProps: Map<String, *>) {
+
     private val argb: ArrayList<Int>? = materialProps["color"] as? ArrayList<Int>
-
     @field:ColorInt
     var color: Int = getIntColor(argb) ?: DEFAULT_COLOR
 
@@ -27,7 +31,8 @@ class FlutterArCoreMaterial(materialProps: Map<String, *>) {
         private const val DEFAULT_ROUGHNESS = 40
         private const val DEFAULT_REFLECTANCE = 50
 
-        val DEFAULT = FlutterArCoreMaterial(HashMap<String, Any>())
+        val DEFAULT = BaseMaterial(HashMap<String, Any>())
+
     }
 
     private fun getIntColor(argb: ArrayList<Int>?): Int? {

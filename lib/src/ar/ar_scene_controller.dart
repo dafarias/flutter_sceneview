@@ -1,7 +1,6 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_sceneview/flutter_sceneview.dart';
-import 'package:flutter_sceneview/src/entities/arcore_shape.dart';
 import 'package:flutter_sceneview/src/logging/node_logs.dart';
 import 'package:flutter_sceneview/src/utils/scene_render.dart';
 
@@ -89,7 +88,7 @@ class ARSceneController {
     return Node.empty;
   }
 
-  Future<Node> addShapeNode(ArCoreShape shape) async {
+  Future<Node> addShapeNode(BaseShape shape) async {
     final shapeMap = shape.toMap();
     final result = await _arChannel.invokeMethod('addShapeNode', shapeMap);
     return Node.fromJson(Map<String, dynamic>.from(result));
@@ -112,6 +111,28 @@ class ARSceneController {
       await _arChannel.invokeMethod('removeAllNodes');
     } catch (e) {
       debugPrint("AR Controller error: $e");
+    }
+  }
+
+  Future<List<HitTestResult>> hitTest({
+    required double x,
+    required double y,
+  }) async {
+    try {
+      final hitTestResultRaw = await _arChannel.invokeMethod<List<dynamic>?>(
+        'performHitTest',
+        {'x': x, 'y': y, 'renderInfo': SceneUtils.renderInfo?.toJson()},
+      );
+
+      final hitTestResult =
+          hitTestResultRaw
+              ?.map((item) => HitTestResult.fromMap(item))
+              .toList() ??
+          [];
+      return hitTestResult;
+    } catch (e) {
+      debugPrint(e.toString());
+      return [];
     }
   }
 

@@ -8,11 +8,12 @@ import androidx.lifecycle.Lifecycle
 import com.example.flutter_sceneview.FlutterSceneviewPlugin
 import com.example.flutter_sceneview.ar.ARScene
 import com.example.flutter_sceneview.controller.ARController
-import com.example.flutter_sceneview.entities.flutter.FlutterArCoreShapeNode
+import com.example.flutter_sceneview.models.nodes.FlutterArCoreShapeNode
 import com.example.flutter_sceneview.result.NodeResult
 import com.google.android.filament.EntityManager
 import com.google.android.filament.LightManager
-import com.example.flutter_sceneview.entities.flutter.FlutterArCoreHitTestResult
+import com.example.flutter_sceneview.models.nodes.FlutterArCoreHitTestResult
+import com.example.flutter_sceneview.result.ARResult
 import com.google.ar.core.Config
 import com.google.ar.core.Plane
 import com.google.ar.core.Pose
@@ -189,9 +190,9 @@ class SceneViewWrapper(
             }
 
             "addShapeNode" -> {
-                _mainScope.launch {
-                    onAddShapeNode(call, result)
-                }
+//                _mainScope.launch {
+                onAddShapeNode(call, result)
+//                }
                 return
             }
 
@@ -206,40 +207,10 @@ class SceneViewWrapper(
             }
 
             "performHitTest" -> {
-                // TODO: put this into a method for consistency
-                try {
-                    val coordX = call.argument<Double>("x")
-                    val coordY = call.argument<Double>("y")
-
-                    val x = coordX?.toFloat()
-                    val y = coordY?.toFloat()
-
-                    val frame = sceneView.frame
-                    if (frame != null) {
-                        if(frame.camera.trackingState == TrackingState.TRACKING) {
-                            val hitList = frame.hitTest(x!!, y!!)
-                            val list = ArrayList<Map<String, Any>>()
-                            for (hit in hitList) {
-                                val trackable = hit.trackable
-                                if (trackable is Plane && trackable.isPoseInPolygon(hit.hitPose)) {
-                                    hit.hitPose
-                                    val distance: Float = hit.distance
-                                    val translation = hit.hitPose.translation
-                                    val rotation = hit.hitPose.rotationQuaternion
-                                    val flutterArCoreHitTestResult = FlutterArCoreHitTestResult(distance, translation, rotation)
-                                    val hitTestResult = flutterArCoreHitTestResult.toMap()
-                                    list.add(hitTestResult)
-                                }
-                            }
-                            Log.i("HitTestResult", "$list")
-                            result.success(list)
-                        }
-                    }
-
-                } catch (e: Exception) {
-                    result.error("PerformHitTest", e.message, null)
-                }
+                onHitTest(call, result)
+                return
             }
+
             else -> result.notImplemented()
         }
     }
@@ -284,9 +255,7 @@ class SceneViewWrapper(
 
             if (args == null) {
                 result.error(
-                    "INVALID_ARGUMENTS",
-                    "Expected a map with node position",
-                    null
+                    "INVALID_ARGUMENTS", "Expected a map with node position", null
                 )
                 return
             }
@@ -305,8 +274,8 @@ class SceneViewWrapper(
                         }
                     }
                 } catch (e: Exception) {
-                    result.error("ADD_SHAPE_NODE_ERROR", e.message ?: "Unknown error",
-                        e.stackTraceToString()
+                    result.error(
+                        "ADD_SHAPE_NODE_ERROR", e.message ?: "Unknown error", e.stackTraceToString()
                     )
                 }
             }
@@ -315,7 +284,6 @@ class SceneViewWrapper(
             result.error("ADD_SHAPE_NODE_ERROR", e.message ?: "Unknown error", null)
         }
     }
-
 
     fun onRemoveNode(call: MethodCall, result: MethodChannel.Result) {
         try {
@@ -342,6 +310,41 @@ class SceneViewWrapper(
             result.error("REMOVE_ALL_NODES_ERROR", e.message ?: "Unknown error", null)
         }
     }
+
+
+    fun onHitTest(call: MethodCall, result: MethodChannel.Result) {
+        try {
+            Log.i(TAG, "performHitTest")
+            val args = call.arguments as? Map<String, *>
+            if (args == null) {
+                result.error(
+                    "INVALID_ARGUMENTS",
+                    "Expected a map with the x and y coordinates to perform a hit test on the AR Scene",
+                    null
+                )
+                return
+            }
+            val results = _controller.hitTest(args)
+
+            when (results) {
+                is ARResult.Hits -> {
+                    result.success(results.hitResult)
+                }
+//                is GenericError.Failed -> {
+//                    result.error("ADD_NODE_FAILED", nodeResult.reason, null)
+//                }
+                else -> {
+                    result.error("HIT_TEST_FAILED", "Unknown error", null)
+                }
+            }
+
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to perform hit test: ${e.message}")
+            result.error("PerformHitTest", e.message, null)
+        }
+    }
+
 }
 
 

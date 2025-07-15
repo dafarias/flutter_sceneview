@@ -4,9 +4,11 @@ import android.content.Context
 import android.graphics.Color
 import android.util.Log
 import com.example.flutter_sceneview.FlutterSceneviewPlugin
-import com.example.flutter_sceneview.entities.flutter.FlutterArCoreShapeNode
-import com.example.flutter_sceneview.models.NodeInfo
+import com.example.flutter_sceneview.models.nodes.FlutterArCoreShapeNode
+import com.example.flutter_sceneview.models.nodes.HitTestResult
+import com.example.flutter_sceneview.models.nodes.NodeInfo
 import com.example.flutter_sceneview.models.render.RenderInfo
+import com.example.flutter_sceneview.result.ARResult
 import com.example.flutter_sceneview.result.NodeResult
 import com.google.ar.core.Plane
 import com.google.ar.core.TrackingState
@@ -118,13 +120,17 @@ class ARController(
             physicalY = sceneView.height / 2f
             Log.i(TAG, "Placing node at scene center x=$physicalX, y=$physicalY")
         } else {
+            // Send render info with the initialization of the scene, if it changes
+            // then send it as an optional parameter
             val renderInfoMap = args["renderInfo"] as? Map<String, *>
+
             if (x == null || y == null || renderInfoMap == null) {
                 failureMessage = "Missing x/y or renderInfo for node placement."
                 Log.e(TAG, failureMessage)
                 return NodeResult.Failed(failureMessage)
             }
             val renderInfo = RenderInfo.fromMap(renderInfoMap)
+
             val (normalizedX, normalizedY) = normalizePoint(x, y, renderInfo) ?: run {
                 failureMessage = "Normalization failed"
                 Log.e(TAG, failureMessage)
@@ -228,7 +234,7 @@ class ARController(
         }
     }
 
-    fun removeAllNodes(): Unit { //NodeResult
+    fun removeAllNodes(): Unit {
         try {
             sceneView.childNodes.forEach { node ->
                 sceneView.removeChildNode(node)
@@ -241,24 +247,87 @@ class ARController(
     }
 
 
+    fun hitTest(args: Map<String, *>): ARResult {  //NodeResult
+        try {
+            val coordX = (args["x"] as? Double)?.toFloat()
+            val coordY = (args["y"] as? Double)?.toFloat()
+
+            val x = coordX?.toFloat()
+            val y = coordY?.toFloat()
+
+
+            val renderInfoMap = args["renderInfo"] as? Map<String, *>
+
+            if (x == null || y == null || renderInfoMap == null) {
+                return ARResult.Error("Missing x/y or renderInfo to hit test AR Scene")
+            }
+            val renderInfo = RenderInfo.fromMap(renderInfoMap)
+
+            val (normalizedX, normalizedY) = normalizePoint(x, y, renderInfo) ?: run {
+                Log.e(TAG, "Normalization failed")
+                return ARResult.Error("Normalization failed")
+            }
+
+            // Use normalizedX and normalizedY for  hit testing
+            val physicalX: Float = (normalizedX * sceneView.width).toFloat()
+            val physicalY: Float = (normalizedY * sceneView.height).toFloat()
+
+
+            val frame = sceneView.frame
+            if (frame != null) {
+                if (frame.camera.trackingState == TrackingState.TRACKING) {
+                    val hitList = frame.hitTest(physicalX, physicalY)
+                    val list = ArrayList<Map<String, Any>>()
+                    for (hit in hitList) {
+                        val trackable = hit.trackable
+                        if (trackable is Plane && trackable.isPoseInPolygon(hit.hitPose)) {
+                            hit.hitPose
+                            val distance: Float = hit.distance
+                            val translation = hit.hitPose.translation
+                            val rotation = hit.hitPose.rotationQuaternion
+                            val flutterArCoreHitTestResult =
+                                HitTestResult(distance, translation, rotation)
+                            val hitTestResult = flutterArCoreHitTestResult.toMap()
+                            list.add(hitTestResult)
+                        }
+                    }
+                    Log.i("HitTestResult", "$list")
+                    return ARResult.Hits(list)
+                }
+            }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to remove all nodes from the scene ${e.message}")
+            //return NodeResult.Failed("Failed to remove nodes from the scene")
+        }
+        return ARResult.Hits(ArrayList<Map<String, Any>>())
+    }
+
+
     fun normalizePoint(
         xLogical: Float, yLogical: Float, renderInfo: RenderInfo
     ): Pair<Float, Float>? {
-        val pixelRatio = renderInfo.pixelRatio.toFloat()
+        try {
+            val pixelRatio = renderInfo.pixelRatio.toFloat()
 
-        val adjustedX = (xLogical * pixelRatio).toFloat()
-        val adjustedY = (yLogical * pixelRatio).toFloat()
+            val adjustedX = (xLogical * pixelRatio).toFloat()
+            val adjustedY = (yLogical * pixelRatio).toFloat()
 
-        val adjustedPosX = (renderInfo.position.dx * pixelRatio).toFloat()
-        val adjustedPosY = (renderInfo.position.dy * pixelRatio).toFloat()
+            val adjustedPosX = (renderInfo.position.dx * pixelRatio).toFloat()
+            val adjustedPosY = (renderInfo.position.dy * pixelRatio).toFloat()
 
-        val adjustedWidth = (renderInfo.size.width * pixelRatio).toFloat()
-        val adjustedHeight = (renderInfo.size.height * pixelRatio).toFloat()
+            val adjustedWidth = (renderInfo.size.width * pixelRatio).toFloat()
+            val adjustedHeight = (renderInfo.size.height * pixelRatio).toFloat()
 
-        val localX = ((adjustedX - adjustedPosX) / adjustedWidth).coerceIn(0f, 1f)
-        val localY = ((adjustedY - adjustedPosY) / adjustedHeight).coerceIn(0f, 1f)
+            val localX = ((adjustedX - adjustedPosX) / adjustedWidth).coerceIn(0f, 1f)
+            val localY = ((adjustedY - adjustedPosY) / adjustedHeight).coerceIn(0f, 1f)
 
-        return Pair(localX, localY)
+            return Pair(localX, localY)
+        } catch (e: Exception) {
+            Log.e(TAG, "Normalization failed ${e.message}")
+        }
+
+        return null
     }
 
 

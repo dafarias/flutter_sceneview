@@ -3,7 +3,7 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_sceneview/flutter_sceneview.dart';
-import 'package:vector_math/vector_math.dart';
+import 'package:vector_math/vector_math.dart' hide Sphere;
 
 void main() {
   runApp(const MyApp());
@@ -100,8 +100,8 @@ class _MyAppState extends State<MyApp> {
 
   void placeNode() async {
     final node = await _flutterSceneviewPlugin.addNode(
-      x: 0,
-      y: 0,
+      x: 550,
+      y: 550,
       fileName: 'golf_flag.glb',
     );
 
@@ -113,8 +113,8 @@ class _MyAppState extends State<MyApp> {
 
   void placeShapeNode(Vector3 position, Vector3 rotation) async {
     final node = Node(position: position, rotation: rotation);
-    final material = ArCoreMaterial(color: Color.fromARGB(255, 255, 255, 255));
-    final sphere = ArCoreSphere(node, material: material, radius: 0.05);
+    final material = BaseMaterial(color: Color.fromARGB(255, 255, 255, 255));
+    final sphere = Sphere(node, material: material, radius: 0.05);
     final sphereNode = await _flutterSceneviewPlugin.addShapeNode(sphere);
 
     if (sphereNode != null) {
@@ -147,5 +147,6 @@ class _MyAppState extends State<MyApp> {
         hitTestResult.rotation.z,
       ),
     );
+
   }
 }

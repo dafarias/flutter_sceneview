@@ -1,4 +1,4 @@
-package com.example.flutter_sceneview.entities.flutter
+package com.example.flutter_sceneview.models.nodes
 
 class FlutterArCoreHitTestResult(
     private val distance: Float,

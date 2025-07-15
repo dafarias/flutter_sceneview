@@ -1,6 +1,6 @@
 import 'dart:ui';
 
-class ArCoreMaterial {
+class BaseMaterial {
   final Color? color;
 
   final double? metallic;
@@ -9,7 +9,8 @@ class ArCoreMaterial {
 
   final double? reflectance;
 
-  ArCoreMaterial({this.metallic, this.roughness, this.reflectance, this.color});
+  BaseMaterial({this.metallic, this.roughness, this.reflectance, this.color});
+
 
   Map<String, dynamic> toMap() => <String, dynamic>{
     'color': [color!.a, color!.r, color!.g, color!.b],
@@ -17,4 +18,6 @@ class ArCoreMaterial {
     'roughness': roughness,
     'reflectance': reflectance,
   }..removeWhere((String k, dynamic v) => v == null);
+
+
 }

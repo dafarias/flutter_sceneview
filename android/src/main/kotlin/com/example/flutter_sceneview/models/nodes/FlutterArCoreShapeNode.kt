@@ -1,5 +1,6 @@
-package com.example.flutter_sceneview.entities.flutter
+package com.example.flutter_sceneview.models.nodes
 
+import com.example.flutter_sceneview.models.nodes.FlutterArCoreNode
 import com.google.android.filament.Engine
 import com.google.android.filament.MaterialInstance
 import io.github.sceneview.node.Node
@@ -17,8 +18,10 @@ class FlutterArCoreShapeNode(shapeProps: Map<String, *>) :
     }
 
     fun build(engine: Engine, material: MaterialInstance?): Node? {
+        //Todo: Add type based  enum to have a uniform way to select the type in both
+        // languages
         return when (shapeType) {
-            "ArCoreSphere" -> SphereNode(
+            "Sphere" -> SphereNode(
                 engine,
                 radius = radius ?: DEFAULT_RADIUS,
                 materialInstance = material
