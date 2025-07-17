@@ -37,4 +37,9 @@ class FlutterSceneview {
   Future<List<HitTestResult>> performHitTest(double x, double y) {
     return FlutterSceneviewPlatform.instance.performHitTest(x, y);
   }
+
+  Future<void> sceneSnapshot() {
+    return FlutterSceneviewPlatform.instance.sceneSnapshot();
+  }
+
 }

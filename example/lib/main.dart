@@ -115,7 +115,8 @@ class _MyAppState extends State<MyApp> {
     final node = Node(position: position, rotation: rotation);
     final material = BaseMaterial(color: Color.fromARGB(255, 255, 255, 255));
     final sphere = Sphere(node, material: material, radius: 0.05);
-    final sphereNode = await _flutterSceneviewPlugin.addShapeNode(sphere);
+    final torus = Torus(node, material: material, majorRadius: 1, minorRadius: 0.05);
+    final sphereNode = await _flutterSceneviewPlugin.addShapeNode(torus);
 
     if (sphereNode != null) {
       placedNodes.add(node);
@@ -147,6 +148,5 @@ class _MyAppState extends State<MyApp> {
         hitTestResult.rotation.z,
       ),
     );
-
   }
 }

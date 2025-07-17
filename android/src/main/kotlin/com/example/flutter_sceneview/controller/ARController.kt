@@ -201,7 +201,7 @@ class ARController(
             shapeNode.name = UUID.randomUUID().toString()
             shapeNode.position = shape.position!!
             shapeNode.rotation = shape.rotation!!
-            shapeNode.scale = Scale(1f, 1f, 1f) // TODO
+//            shapeNode.scale = Scale(1f, 1f, 1f) // TODO
 
             sceneView.addChildNode(shapeNode)
 
@@ -209,7 +209,8 @@ class ARController(
                 nodeId = shapeNode.name!!,
                 position = shapeNode.position,
                 rotation = shapeNode.rotation,
-                scale = 1f, // TODO: replace this with a Float3 instead of Float
+                scale = 0.1f,
+                // TODO: replace this with a Float3 instead of Float
             )
 
             return NodeResult.Placed(nodeInfo)
