@@ -9,6 +9,7 @@ class MethodChannelFlutterSceneview extends FlutterSceneviewPlatform {
   /// The method channel used to interact with the native platform.
   @visibleForTesting
   final methodChannel = const MethodChannel('flutter_sceneview');
+  final sceneChannel = const MethodChannel('ar_scene');
 
   @override
   Future<String?> getPlatformVersion() async {
@@ -49,5 +50,10 @@ class MethodChannelFlutterSceneview extends FlutterSceneviewPlatform {
   @override
   Future<List<HitTestResult>> performHitTest(double x, double y) async {
     return await ARSceneController.instance.hitTest(x: x, y: y);
+  }
+
+  @override
+  Future<void> sceneSnapshot() async {
+    await sceneChannel.invokeMethod<dynamic>('takeSnapshot');
   }
 }

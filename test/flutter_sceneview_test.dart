@@ -62,6 +62,12 @@ class MockFlutterSceneviewPlatform
     // TODO: implement performHitTest
     throw UnimplementedError();
   }
+  
+  @override
+  Future<void> sceneSnapshot() {
+    // TODO: implement sceneSnapshot
+    throw UnimplementedError();
+  }
 }
 
 void main() {
