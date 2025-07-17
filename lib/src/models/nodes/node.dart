@@ -59,3 +59,35 @@ class Vector3Converter implements JsonConverter<Vector3, Map<Object?, Object?>> 
     'z': object.z,
   };
 }
+
+
+
+class Vector4Converter implements JsonConverter<Vector4, Map<Object?, Object?>> {
+  const Vector4Converter();
+
+  @override
+  Vector4 fromJson(Object? json) {
+    if (json == null) {
+      throw ArgumentError('Expected non-null JSON for Vector4');
+    }
+    if (json is! Map) {
+      throw ArgumentError('Expected a Map for Vector4 but got ${json.runtimeType}');
+    }
+
+    final map = Map<String, dynamic>.from(json);
+    return Vector4(
+      (map['x'] as num).toDouble(),
+      (map['y'] as num).toDouble(),
+      (map['z'] as num).toDouble(),
+      (map['w'] as num).toDouble(),
+    );
+  }
+
+  @override
+  Map<String, dynamic> toJson(Vector4 object) => {
+    'x': object.x,
+    'y': object.y,
+    'z': object.z,
+    'w': object.w,
+  };
+}

@@ -1,5 +1,5 @@
+import 'package:flutter_sceneview/flutter_sceneview.dart';
 import 'package:flutter_sceneview/flutter_sceneview_platform_interface.dart';
-import 'package:flutter_sceneview/src/models/nodes/node.dart';
 
 // The methods defined here are the ones exposed into the
 // final _flutterSceneviewPlugin = FlutterSceneview(); instance.
@@ -8,9 +8,6 @@ import 'package:flutter_sceneview/src/models/nodes/node.dart';
 // internal implementation, and hidden to the app implementation side
 
 //TODO: Public entry of the plugin
-
-//todo: Move the file to the models folder and fix relative imports
-import 'entities/arcore_hit_test_result.dart';
 
 class FlutterSceneview {
   Future<String?> getPlatformVersion() {
@@ -33,7 +30,16 @@ class FlutterSceneview {
     );
   }
 
-  Future<List<ArCoreHitTestResult>> performHitTest(double x, double y) {
+  Future<Node?> addShapeNode(BaseShape shape) {
+    return FlutterSceneviewPlatform.instance.addShapeNode(shape);
+  }
+
+  Future<List<HitTestResult>> performHitTest(double x, double y) {
     return FlutterSceneviewPlatform.instance.performHitTest(x, y);
   }
+
+  Future<void> sceneSnapshot() {
+    return FlutterSceneviewPlatform.instance.sceneSnapshot();
+  }
+
 }
