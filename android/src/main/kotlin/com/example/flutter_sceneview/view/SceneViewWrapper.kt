@@ -45,6 +45,8 @@ class SceneViewWrapper(
     override fun dispose() {
         Log.i(TAG, "dispose")
         _channel.setMethodCallHandler(null)
+        // Dispose / destroy all the handlers here as well
+        // Like ex: ARScene
     }
 
     // Create DTO or Model class to send in the configuration params
@@ -79,7 +81,7 @@ class SceneViewWrapper(
                 }
             }
 
-            ARScene(sceneView, messenger).addSunLight()
+            ARScene(sceneView, messenger, context).enableEnvironment()
 
 
             sceneView.layoutParams = FrameLayout.LayoutParams(

@@ -12,6 +12,8 @@ import com.example.flutter_sceneview.result.ARResult
 import com.example.flutter_sceneview.result.NodeResult
 import com.google.ar.core.Plane
 import com.google.ar.core.TrackingState
+import dev.romainguy.kotlin.math.Float3
+import dev.romainguy.kotlin.math.Quaternion
 import io.github.sceneview.ar.ARSceneView
 import io.github.sceneview.math.Position
 import io.github.sceneview.node.ModelNode
@@ -22,8 +24,11 @@ import java.io.File
 import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterAssets
 import io.flutter.plugin.common.MethodChannel
 import io.github.sceneview.ar.arcore.createAnchorOrNull
+import io.github.sceneview.collision.Vector3
 import io.github.sceneview.math.Scale
+import io.github.sceneview.math.Transform
 import io.github.sceneview.model.Model
+import io.github.sceneview.node.Node
 import java.io.FileOutputStream
 import java.util.UUID
 
@@ -203,6 +208,7 @@ class ARController(
             shapeNode.rotation = shape.rotation!!
 //            shapeNode.scale = Scale(1f, 1f, 1f) // TODO
 
+
             sceneView.addChildNode(shapeNode)
 
             val nodeInfo = NodeInfo(
@@ -343,6 +349,24 @@ class ARController(
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load model: ${e.message}")
             null
+        }
+    }
+
+
+    fun transfomNode(node: Node?) {
+        try {
+
+            node?.transform(
+                Transform(
+                    position = node.position,//?: Position(),
+                    // Rotate around X),
+                    quaternion = Quaternion.fromAxisAngle(Float3(1.0f, 0.0f, 0.0f), 90f),
+                    scale = node.scale // ?: Scale(1.0f)
+                )
+            )
+
+        } catch (e: Exception) {
+            Log.e(TAG, " Failed to transform node with: ${e.message}")
         }
     }
 

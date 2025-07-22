@@ -9,6 +9,7 @@ import io.github.sceneview.node.Node
 import kotlin.math.cos
 import kotlin.math.sin
 import io.github.sceneview.math.Position
+import kotlin.math.sqrt
 
 
 class Torus(
@@ -75,9 +76,17 @@ class Torus(
                 val z = (majorRadius + minorRadius * cosV) * sinU
 
                 // Normal calculation (approximate)
-                val nx = cosU * cosV
-                val ny = sinV
-                val nz = sinU * cosV
+                var nx = cosU * cosV
+                var ny = sinV
+                var nz = sinU * cosV
+
+//                 Normalize the normal vector
+                val length = sqrt(nx * nx + ny * ny + nz * nz)
+                if (length != 0f) {
+                    nx /= length
+                    ny /= length
+                    nz /= length
+                }
 
                 vertices.add(
                     Geometry.Vertex(
