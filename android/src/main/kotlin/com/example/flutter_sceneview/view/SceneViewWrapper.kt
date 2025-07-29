@@ -141,6 +141,11 @@ class SceneViewWrapper(
                 return
             }
 
+            "addTextNode" -> {
+                onAddTextNode(call, result)
+                return
+            }
+
             else -> result.notImplemented()
         }
     }
@@ -274,6 +279,41 @@ class SceneViewWrapper(
         }
     }
 
+
+    fun onAddTextNode(call: MethodCall, result: MethodChannel.Result) {
+        try {
+            Log.i(TAG, "performHitTest")
+            val args = call.arguments as? Map<String, *>
+            if (args == null) {
+                result.error(
+                    "INVALID_ARGUMENTS",
+                    "Expected a map with the x and y coordinates to perform a hit test on the AR Scene",
+                    null
+                )
+                return
+            }
+
+
+            val results = _controller.addTextNode(args)
+
+//            when (results) {
+//                is ARResult.Hits -> {
+//                    result.success(results.hitResult)
+//                }
+////                is GenericError.Failed -> {
+////                    result.error("ADD_NODE_FAILED", nodeResult.reason, null)
+////                }
+//                else -> {
+//                    result.error("HIT_TEST_FAILED", "Unknown error", null)
+//                }
+//            }
+
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to add text label: ${e.message}")
+            result.error("AddTextNode", e.message, null)
+        }
+    }
 }
 
 

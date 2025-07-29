@@ -14,4 +14,20 @@ data class NodeInfo(
         "rotation" to rotation?.toMap(),
         "scale" to scale,
     )
+
+//    companion object {
+//        @Suppress("UNCHECKED_CAST")
+//        fun fromMap(map: Map<String, Any?>): NodeInfo {
+//            val nodeId   = map["nodeId"] as String
+//            val posMap   = map["position"] as Map<String, Any?>
+//            val position = Position.fromMap(posMap)
+//
+//            val rotMap   = map["rotation"] as? Map<String, Any?>
+//            val rotation = rotMap?.let { Position.fromMap(it) }
+//
+//            val scale    = (map["scale"] as? Number)?.toFloat()
+//
+//            return NodeInfo(nodeId, position, rotation, scale)
+//        }
+//    }
 }

@@ -35,7 +35,11 @@ class MethodChannelFlutterSceneview extends FlutterSceneviewPlatform {
   }
 
   @override
-  Future<Node?> addShapeNode(BaseShape shape) async {
+  Future<Node?> addShapeNode(
+    BaseShape shape, {
+    double x = 0,
+    double y = 0,
+  }) async {
     return await ARSceneController.instance.addShapeNode(shape);
   }
 
@@ -45,6 +49,23 @@ class MethodChannelFlutterSceneview extends FlutterSceneviewPlatform {
       'checkPermissions',
     );
     return hasCameraPermissions;
+  }
+
+  @override
+  Future<Node?> addTextNode(
+    String text, {
+    double x = 0,
+    double y = 0,
+    double size = 1,
+    String? fontFamily,
+  }) async {
+    return await ARSceneController.instance.addTextNode(
+      text,
+      x: x,
+      y: y,
+      size: size,
+      fontFamily: fontFamily,
+    );
   }
 
   @override
