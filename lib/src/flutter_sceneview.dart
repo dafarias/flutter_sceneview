@@ -31,8 +31,24 @@ class FlutterSceneview {
     );
   }
 
-  Future<Node?> addShapeNode(BaseShape shape) {
+  Future<Node?> addShapeNode(BaseShape shape, {double x = 0, double y = 0}) {
     return FlutterSceneviewPlatform.instance.addShapeNode(shape);
+  }
+
+  Future<Node?> addTextNode(
+    String text, {
+    double x = 0,
+    double y = 0,
+    double size = 1,
+    String? fontFamily,
+  }) {
+    return FlutterSceneviewPlatform.instance.addTextNode(
+      text,
+      x: x,
+      y: y,
+      size: size,
+      fontFamily: fontFamily,
+    );
   }
 
   Future<List<HitTestResult>> performHitTest(double x, double y) {

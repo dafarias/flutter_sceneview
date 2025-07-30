@@ -53,7 +53,7 @@ class MockFlutterSceneviewPlatform
   }
 
   @override
-  Future<Node?> addShapeNode(BaseShape shape) {
+  Future<Node?> addShapeNode(BaseShape shape, {double x = 0, double y = 0}) {
     // TODO: implement addShapeNode
     throw UnimplementedError();
   }
@@ -63,10 +63,22 @@ class MockFlutterSceneviewPlatform
     // TODO: implement performHitTest
     throw UnimplementedError();
   }
-  
+
   @override
   Future<Uint8List> sceneSnapshot() {
     // TODO: implement sceneSnapshot
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<Node?> addTextNode(
+    String text, {
+    double x = 0,
+    double y = 0,
+    double size = 1,
+    String? fontFamily,
+  }) {
+    // TODO: implement addTextNode
     throw UnimplementedError();
   }
 }

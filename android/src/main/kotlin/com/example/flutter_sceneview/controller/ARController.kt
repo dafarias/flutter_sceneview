@@ -1,17 +1,17 @@
 package com.example.flutter_sceneview.controller
 
 import android.content.Context
-import android.graphics.Color
-import android.util.Log
+import android.graphics.*
+import com.example.flutter_sceneview.models.nodes.*
 import com.example.flutter_sceneview.FlutterSceneviewPlugin
-import com.example.flutter_sceneview.models.nodes.FlutterArCoreShapeNode
-import com.example.flutter_sceneview.models.nodes.HitTestResult
-import com.example.flutter_sceneview.models.nodes.NodeInfo
+import android.util.Log
 import com.example.flutter_sceneview.models.render.RenderInfo
 import com.example.flutter_sceneview.result.ARResult
 import com.example.flutter_sceneview.result.NodeResult
 import com.google.ar.core.Plane
 import com.google.ar.core.TrackingState
+import dev.romainguy.kotlin.math.Float3
+import dev.romainguy.kotlin.math.Quaternion
 import io.github.sceneview.ar.ARSceneView
 import io.github.sceneview.math.Position
 import io.github.sceneview.node.ModelNode
@@ -22,9 +22,15 @@ import java.io.File
 import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterAssets
 import io.flutter.plugin.common.MethodChannel
 import io.github.sceneview.ar.arcore.createAnchorOrNull
+import io.github.sceneview.math.Transform
 import io.github.sceneview.model.Model
+import io.github.sceneview.node.Node
 import java.io.FileOutputStream
 import java.util.UUID
+import androidx.core.graphics.createBitmap
+import io.github.sceneview.node.ImageNode
+import io.github.sceneview.texture.*
+
 
 class ARController(
     private val context: Context,
@@ -38,7 +44,6 @@ class ARController(
     private val defaultModelSrc = "models/Duck.glb"
 
     private val preloadedModels = mutableMapOf<String, Model>()
-
 
     fun onTap(position: Position, fileName: String? = null) {
         coroutineScope.launch {
@@ -347,6 +352,93 @@ class ARController(
         }
     }
 
+    fun addTextNode(
+        args: Map<String, *>,
+    ) {
+        val text = args["text"] as? String ?: ""
+        val nodeScale = args["scale"] as? Float3 ?: Float3()
+        val x = (args["x"] as? Double)?.toFloat()
+        val y = (args["y"] as? Double)?.toFloat()
+        val fontFamily = args["fontFamily"] as? String
+
+        // The size can be a single float value of N = meters, like 0.02 , etc.
+        // This size represents the widht of the image / bitmap (in meters)
+        val size = (args["size"] as? Number)?.toFloat() ?: 1f
+
+        //Temporary measure, color equivalent needs to be worked on
+        val textColor = args["textColor"] as? Int ?: Color.WHITE
+
+        val renderInfoMap = args["renderInfo"] as? Map<String, *>
+
+        if (x == null || y == null || renderInfoMap == null) {
+            return
+        }
+        val renderInfo = RenderInfo.fromMap(renderInfoMap)
+
+        val (normalizedX, normalizedY) = normalizePoint(x, y, renderInfo) ?: run {
+            Log.e(TAG, "Normalization failed")
+            return
+        }
+
+        // Use normalizedX and normalizedY for  hit testing
+        val physicalX: Float = (normalizedX * sceneView.width).toFloat()
+        val physicalY: Float = (normalizedY * sceneView.height).toFloat()
+
+
+        val hitResultAnchor = sceneView.hitTestAR(
+            xPx = physicalX,
+            yPx = physicalY,
+            point = true,
+            planeTypes = setOf(Plane.Type.HORIZONTAL_UPWARD_FACING, Plane.Type.VERTICAL),
+        )?.createAnchorOrNull()
+
+        if (hitResultAnchor == null) {
+            val failureMessage =
+                "No AR surface found at screen coordinates x=$physicalX, y=$physicalX"
+            Log.e(TAG, failureMessage)
+            return
+        }
+
+        val pose = hitResultAnchor.pose
+        val hitPosition = Position(pose.tx(), pose.ty(), pose.tz())
+
+        val textBitmap = createTextBitmap(text, size = size, fontFamily = fontFamily)
+
+        // Calculate AR height maintaining aspect ratio
+        val aspectRatio = textBitmap.height.toFloat() / textBitmap.width.toFloat()
+        val heightMeters = size * aspectRatio
+
+        val textNode = ImageNode(
+            materialLoader = sceneView.materialLoader,
+            bitmap = textBitmap,
+            size = Float3(size, heightMeters, 0f),
+            center = Position(0f, 0f, 0f),
+        ).apply {
+            position = hitPosition
+            // The scale can be used to customize the test or node in any required axis: Example
+            // scale = Float3(1f, 1f, 1f)
+        }
+
+        sceneView.addChildNode(textNode)
+    }
+
+
+    fun transfomNode(node: Node?) {
+        try {
+            node?.transform(
+                Transform(
+                    position = node.position,//?: Position(),
+                    // Rotate around X),
+                    quaternion = Quaternion.fromAxisAngle(Float3(1.0f, 0.0f, 0.0f), 90f),
+                    scale = node.scale // ?: Scale(1.0f)
+                )
+            )
+
+        } catch (e: Exception) {
+            Log.e(TAG, " Failed to transform node with: ${e.message}")
+        }
+    }
+
 
     //TODO: Move to a helper or to a util class so this class only worries about handling scene objects
     fun getAssetPath(fileName: String? = null): String {
@@ -386,4 +478,57 @@ class ARController(
         }
     }
 
+
+    //TODO: Move to helpers.
+    // Args will be: Text, textColor,
+    fun createTextBitmap(
+        text: String,
+        size: Float = 1f,
+        fontFamily: String? = "",
+        bitmapTextSize: Float = 200f,
+        textColor: Int = Color.WHITE,
+        pixelDensity: Int = 2000
+    ): Bitmap {
+
+        var typefaceAsset: Typeface? = null
+
+        if (fontFamily != null && fontFamily.isNotEmpty()) {
+            // 🔹 Load typeface from Flutter asset
+            val fontPathInApk = flutterAssets?.getAssetFilePathByName(fontFamily)
+            typefaceAsset = try {
+                Typeface.createFromAsset(context.assets, fontPathInApk)
+            } catch (e: Exception) {
+                Typeface.DEFAULT // fallback if font fails to load
+            }
+        }
+
+
+        // The text size is used to calculate the crispness / resolution
+        // of the pixels used in the text
+        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+            textSize = bitmapTextSize
+            color = textColor
+            isAntiAlias = true
+            isDither = true
+            isFilterBitmap = true
+            typeface = typefaceAsset
+        }
+
+        val targetWidthPx = (size * pixelDensity).toInt()
+
+        //  Measure and adjust text size proportionally to fit target width
+        val measuredWidth = paint.measureText(text)
+        val proportionalSize = (targetWidthPx / measuredWidth) * paint.textSize
+        paint.textSize = proportionalSize
+
+        val textWidth = paint.measureText(text).toInt()
+        val textHeight = (paint.descent() - paint.ascent()).toInt()
+
+        val bitmap = createBitmap(textWidth + 40, textHeight + 40)
+        val canvas = Canvas(bitmap)
+        canvas.drawColor(Color.TRANSPARENT)
+        canvas.drawText(text, 20f, textHeight.toFloat(), paint)
+
+        return bitmap
+    }
 }
