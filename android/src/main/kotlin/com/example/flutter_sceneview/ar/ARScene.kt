@@ -1,10 +1,8 @@
 package com.example.flutter_sceneview.ar
 
 import android.media.Image
-import android.app.Activity
 import android.content.Context
 import android.content.res.AssetManager
-import android.graphics.Bitmap
 import android.util.Log
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
@@ -16,16 +14,12 @@ import java.nio.ByteOrder
 import com.google.android.filament.EntityManager
 import com.google.android.filament.LightManager
 import com.google.android.filament.Skybox
-import com.google.android.filament.utils.rotation
-import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterAssets
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import kotlin.math.cos
 import kotlin.math.sin
-
-
 
 class ARScene(
     private val sceneView: ARSceneView,

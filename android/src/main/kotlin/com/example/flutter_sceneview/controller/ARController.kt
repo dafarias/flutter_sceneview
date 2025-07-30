@@ -29,8 +29,6 @@ import java.io.FileOutputStream
 import java.util.UUID
 import androidx.core.graphics.createBitmap
 import io.github.sceneview.node.ImageNode
-import io.github.sceneview.texture.*
-
 
 class ARController(
     private val context: Context,
@@ -45,6 +43,7 @@ class ARController(
 
     private val preloadedModels = mutableMapOf<String, Model>()
 
+    // TODO: Isn't used, remove?
     fun onTap(position: Position, fileName: String? = null) {
         coroutineScope.launch {
             try {
