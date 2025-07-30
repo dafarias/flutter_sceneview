@@ -1,6 +1,6 @@
 import 'dart:io' as io;
 
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_sceneview_example/examples/ultralytics_integration/detection_result.dart';
 import 'package:flutter_sceneview_example/examples/ultralytics_integration/extensions.dart';
 import 'package:gal/gal.dart';
@@ -9,7 +9,7 @@ import 'package:ultralytics_yolo/yolo.dart';
 import 'package:ultralytics_yolo/yolo_view.dart';
 
 class DetectionService {
-  static final String _modelName = 'best_float32.tflite';
+  static final String _modelName = 'model_1024_int8.tflite';
 
   late final YOLOViewController controller;
   late final YOLO _yolo;
@@ -64,40 +64,25 @@ class DetectionService {
     }
   }
 
-  Future<DetectionResult> analyseImage(String imagePath) async {
+  Future<DetectionResult> analyseImage(Uint8List imageBytes) async {
     try {
-      final file = io.File(imagePath);
-      final fileBytes = await file.readAsBytes();
-      final detectedObjects = await _yolo.predict(fileBytes);
-      var detectionResult = detectedObjects.toDetectionResult();
+      final detectedObjects = await _yolo.predict(imageBytes);
+      final detectionResult = detectedObjects.toDetectionResult(minBallConfidence: 0.1);
+
+      // TODO: remove after testing
+      // saveDetectionToGallery(imageBytes, detectionResult);
+
       return detectionResult;
-    } catch (e) {
-      debugPrint(e.toString());
-      return DetectionResult(
-        hole: null,
-        balls: [],
-      );
+    } catch(e) {
+      return DetectionResult(hole: null, balls: []);
     }
   }
-
-  // TODO: remove if not needed
-  // Future<String> _copyAsset(String assetPath) async {
-  //   final path = '${(await getApplicationSupportDirectory()).path}/$assetPath';
-  //   await io.Directory(dirname(path)).create(recursive: true);
-  //   final file = io.File(path);
-  //   if (!await file.exists()) {
-  //     final byteData = await rootBundle.load(assetPath);
-  //     await file.writeAsBytes(byteData.buffer
-  //         .asUint8List(byteData.offsetInBytes, byteData.lengthInBytes));
-  //   }
-  //   return file.path;
-  // }
 
   // NOTE: used only for testing purposes to see detection results on image.
   // Enable it on the analyseImage method.
   Future<void> saveDetectionToGallery(
-      String imagePath, DetectionResult detections) async {
-    final image = await img.decodePngFile(imagePath);
+      Uint8List imageBytes, DetectionResult detections) async {
+    final image = img.decodePng(imageBytes);
 
     if (detections.hole != null) {
       final holeBoundingBox = detections.hole!.boundingBox!;

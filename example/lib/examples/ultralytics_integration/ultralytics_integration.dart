@@ -3,8 +3,7 @@ import 'package:flutter_sceneview/flutter_sceneview.dart';
 import 'package:flutter_sceneview_example/examples/ultralytics_integration/ball_detection.dart';
 import 'package:flutter_sceneview_example/examples/ultralytics_integration/detection_result.dart';
 import 'package:flutter_sceneview_example/examples/ultralytics_integration/detection_service.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:vector_math/vector_math.dart' hide Colors;
+import 'package:vector_math/vector_math.dart' hide Colors, Sphere;
 
 class UltralyticsIntegration extends StatefulWidget {
   const UltralyticsIntegration({super.key});
@@ -50,13 +49,8 @@ class _UltralyticsIntegrationState extends State<UltralyticsIntegration> {
     await _arSceneController.removeAllNodes();
 
     try {
-      // TODO: add this when snapshot is available
-      // var imageBytes = await _arSceneController.createBytesSnapshot();
-
-      final tempDir = await getTemporaryDirectory();
-      final filePath = "${tempDir.path}/ar_snapshot.png";
-
-      var detectionResult = await _detectionService!.analyseImage(filePath);
+      var imageBytes = await _flutterSceneviewPlugin.sceneSnapshot();
+      var detectionResult = await _detectionService!.analyseImage(imageBytes);
       detectedBalls = await _handleDetections(detectionResult);
     } catch (e) {
       debugPrint(e.toString());
@@ -99,8 +93,7 @@ class _UltralyticsIntegrationState extends State<UltralyticsIntegration> {
         y: holePosition.dy,
         fileName: 'golf_flag.glb',
       );
-    }
-    catch (e) {
+    } catch (e) {
       debugPrint(e.toString());
     }
   }
@@ -117,17 +110,23 @@ class _UltralyticsIntegrationState extends State<UltralyticsIntegration> {
   Future<void> _placeRing({
     required Vector3 worldPosition,
     required double radius,
-  }) {
-    // TODO: implement
-    throw UnimplementedError();
+  }) async {
+    final material = BaseMaterial(color: Color.fromARGB(255, 255, 255, 255));
+    final node = Node(position: worldPosition);
+    final torus = Torus(
+      node,
+      material: material,
+      majorRadius: 1,
+      minorRadius: 0.05,
+    );
+
+    _arSceneController.addShapeNode(torus);
   }
 
   Future<List<BallDetection>> _placeArBalls(
     Vector3 holePosition,
     List<BallDetection> balls,
   ) async {
-    double arObjectScale = 0.01;
-
     for (BallDetection ball in balls) {
       final ballPosition = ball.boundingBox?.center;
 
@@ -141,6 +140,18 @@ class _UltralyticsIntegrationState extends State<UltralyticsIntegration> {
       }
 
       final ballWorldPosition = worldPositions.first.pose.translation;
+      final ballRot = worldPositions.first.pose.rotation;
+      final ballWorldRotation = Vector3(ballRot.x, ballRot.y, ballRot.z);
+
+      final node = Node(
+        position: ballWorldPosition,
+        rotation: ballWorldRotation,
+      );
+      final material = BaseMaterial(color: Color.fromARGB(255, 255, 255, 255));
+      final sphere = Sphere(node, material: material, radius: 0.025);
+      await _flutterSceneviewPlugin.addShapeNode(sphere);
+
+      // TODO: addTextNode
       double distance = _calculateDistanceBetweenPoints(
         holePosition,
         ballWorldPosition,

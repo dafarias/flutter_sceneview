@@ -22,7 +22,6 @@ import java.io.File
 import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterAssets
 import io.flutter.plugin.common.MethodChannel
 import io.github.sceneview.ar.arcore.createAnchorOrNull
-import io.github.sceneview.math.Scale
 import io.github.sceneview.model.Model
 import java.io.FileOutputStream
 import java.util.UUID
@@ -147,9 +146,12 @@ class ARController(
             "SceneView size = ${sceneView.width} x ${sceneView.height}, normalized hit at x=$x y=$y"
         )
         Log.d(TAG, "Transformed coordinates x:$physicalX, y:$physicalY")
+
+        // TODO: add parameter to make normalization appliance optional
+        // currently, x & y is passed raw without normalization
         val hitResultAnchor = sceneView.hitTestAR(
-            xPx = physicalX,
-            yPx = physicalY,
+            xPx = x!!,
+            yPx = y!!,
             point = true,
             planeTypes = setOf(Plane.Type.HORIZONTAL_UPWARD_FACING, Plane.Type.VERTICAL),
         )?.createAnchorOrNull()
@@ -253,18 +255,14 @@ class ARController(
             val coordX = (args["x"] as? Double)?.toFloat()
             val coordY = (args["y"] as? Double)?.toFloat()
 
-            val x = coordX?.toFloat()
-            val y = coordY?.toFloat()
-
-
             val renderInfoMap = args["renderInfo"] as? Map<String, *>
 
-            if (x == null || y == null || renderInfoMap == null) {
+            if (coordX == null || coordY == null || renderInfoMap == null) {
                 return ARResult.Error("Missing x/y or renderInfo to hit test AR Scene")
             }
             val renderInfo = RenderInfo.fromMap(renderInfoMap)
 
-            val (normalizedX, normalizedY) = normalizePoint(x, y, renderInfo) ?: run {
+            val (normalizedX, normalizedY) = normalizePoint(coordX, coordY, renderInfo) ?: run {
                 Log.e(TAG, "Normalization failed")
                 return ARResult.Error("Normalization failed")
             }
@@ -273,11 +271,14 @@ class ARController(
             val physicalX: Float = (normalizedX * sceneView.width).toFloat()
             val physicalY: Float = (normalizedY * sceneView.height).toFloat()
 
+            // TODO: add parameter to make normalization appliance optional
+            // currently, x & y is passed raw without normalization
 
+            // TODO: Maybe refactor this logic with sceneView.hitTestAR, because it does the same
             val frame = sceneView.frame
             if (frame != null) {
                 if (frame.camera.trackingState == TrackingState.TRACKING) {
-                    val hitList = frame.hitTest(physicalX, physicalY)
+                    val hitList = frame.hitTest(coordX, coordY)
                     val list = ArrayList<Map<String, Any>>()
                     for (hit in hitList) {
                         val trackable = hit.trackable
@@ -301,7 +302,7 @@ class ARController(
             Log.e(TAG, "Failed to remove all nodes from the scene ${e.message}")
             //return NodeResult.Failed("Failed to remove nodes from the scene")
         }
-        return ARResult.Hits(ArrayList<Map<String, Any>>())
+        return ARResult.Hits(ArrayList())
     }
 
 
@@ -311,8 +312,8 @@ class ARController(
         try {
             val pixelRatio = renderInfo.pixelRatio.toFloat()
 
-            val adjustedX = (xLogical * pixelRatio).toFloat()
-            val adjustedY = (yLogical * pixelRatio).toFloat()
+            val adjustedX = (xLogical * pixelRatio)
+            val adjustedY = (yLogical * pixelRatio)
 
             val adjustedPosX = (renderInfo.position.dx * pixelRatio).toFloat()
             val adjustedPosY = (renderInfo.position.dy * pixelRatio).toFloat()

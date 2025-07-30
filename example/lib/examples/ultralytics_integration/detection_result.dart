@@ -6,4 +6,6 @@ class DetectionResult {
 
   final List<BallDetection> balls;
   final DetectedObject? hole;
+
+  DetectionResult.empty() : hole = null, balls = [];
 }
