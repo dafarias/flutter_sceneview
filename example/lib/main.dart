@@ -115,10 +115,25 @@ class _MyAppState extends State<MyApp> {
     final node = Node(position: position, rotation: rotation);
     final material = BaseMaterial(color: Color.fromARGB(255, 255, 255, 255));
     final sphere = Sphere(node, material: material, radius: 0.05);
-    final torus = Torus(node, material: material, majorRadius: 1, minorRadius: 0.05);
-    final sphereNode = await _flutterSceneviewPlugin.addShapeNode(torus);
 
-    if (sphereNode != null) {
+    final torus = Torus(
+      node,
+      material: material,
+      majorRadius: 1,
+      minorRadius: 0.05,
+    );
+
+    // The font family ha to be inside the flutter assets folder,
+    // and the fontFamily has to be the location of the font + the font family name
+    // Example: 'assets/fonts/BitcountPropSin_VariableFont.ttf'
+    final textNode = await _flutterSceneviewPlugin.addTextNode(
+      "Custom font text node",
+      x: 400,
+      y: 500,
+      size: 2,
+    );
+
+    if (textNode != null) {
       placedNodes.add(node);
     }
   }
@@ -132,7 +147,7 @@ class _MyAppState extends State<MyApp> {
   }
 
   void _handleHitTest() async {
-    final results = await _flutterSceneviewPlugin.performHitTest(500, 500);
+    final results = await _flutterSceneviewPlugin.performHitTest(250, 600);
 
     if (results.isEmpty) {
       print('[Flutter] No hit test results');

@@ -40,11 +40,21 @@ abstract class FlutterSceneviewPlatform extends PlatformInterface {
   }
 
   Future<Node?> addNode({double x = 0, double y = 0, String? fileName}) {
-    throw UnimplementedError('checkPermissions() has not been implemented.');
+    throw UnimplementedError('addNode() has not been implemented.');
   }
 
-  Future<Node?> addShapeNode(BaseShape shape) {
+  Future<Node?> addShapeNode(BaseShape shape, {double x = 0, double y = 0}) {
     throw UnimplementedError('addShapeNode() has not been implemented.');
+  }
+
+  Future<Node?> addTextNode(
+    String text, {
+    double x = 0,
+    double y = 0,
+    double size = 1,
+    String? fontFamily,
+  }) {
+    throw UnimplementedError('addTextNode() has not been implemented.');
   }
 
   Future<void> removeNode({required String nodeId}) {

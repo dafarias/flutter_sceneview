@@ -94,6 +94,40 @@ class ARSceneController {
     return Node.fromJson(Map<String, dynamic>.from(result));
   }
 
+  Future<Node> addTextNode(
+    String text, {
+    required double x,
+    required double y,
+    double size = 1,
+    String? fontFamily,
+  }) async {
+    final args = <String, dynamic>{};
+    try {
+      assert(text.isNotEmpty, 'Text cannot be empty');
+      assert(size > 0, 'Size must be positive and greater than 0');
+
+      //Required arguments
+      args['x'] = x;
+      args['y'] = y;
+      args['text'] = text;
+      args['size'] = size;
+      args['renderInfo'] = SceneUtils.renderInfo?.toJson();
+
+      // Optional fontFamily
+      if (fontFamily != null && fontFamily.isNotEmpty) {
+        args['fontFamily'] = fontFamily;
+      }
+
+      final result = await _arChannel.invokeMethod('addTextNode', args);
+      if (result == null) throw Exception('addTextNode returned null');
+
+      return Node.fromJson(result);
+    } catch (e) {
+      debugPrint(e.toString());
+      return Node.empty;
+    }
+  }
+
   // TODO: Return value if node was succesfully removed so people can
   // remove it from the list used to track placed nodes
   Future<void> removeNode({required String nodeId}) async {
