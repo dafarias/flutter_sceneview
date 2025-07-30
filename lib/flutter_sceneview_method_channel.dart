@@ -1,10 +1,6 @@
-import 'dart:ffi';
-
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_sceneview/flutter_sceneview.dart';
-//todo: add import to barrel file
-import 'package:flutter_sceneview/src/entities/arcore_hit_test_result.dart';
 
 import 'flutter_sceneview_platform_interface.dart';
 
@@ -13,7 +9,7 @@ class MethodChannelFlutterSceneview extends FlutterSceneviewPlatform {
   /// The method channel used to interact with the native platform.
   @visibleForTesting
   final methodChannel = const MethodChannel('flutter_sceneview');
-  final arViewChannel = MethodChannel('ar_view_wrapper');
+  final sceneChannel = const MethodChannel('ar_scene');
 
   @override
   Future<String?> getPlatformVersion() async {
@@ -30,6 +26,20 @@ class MethodChannelFlutterSceneview extends FlutterSceneviewPlatform {
   }
 
   @override
+  Future<Node?> addNode({double x = 0, double y = 0, String? fileName}) async {
+    return await ARSceneController.instance.addNode(
+      x: x,
+      y: y,
+      fileName: fileName,
+    );
+  }
+
+  @override
+  Future<Node?> addShapeNode(BaseShape shape) async {
+    return await ARSceneController.instance.addShapeNode(shape);
+  }
+
+  @override
   Future<bool?> checkPermissions() async {
     final hasCameraPermissions = await methodChannel.invokeMethod<bool>(
       'checkPermissions',
@@ -38,22 +48,12 @@ class MethodChannelFlutterSceneview extends FlutterSceneviewPlatform {
   }
 
   @override
-  Future<Node?> addNode({double x = 0, double y = 0, String? fileName}) async {
-    return await ARSceneController.instance.addNode(x: x, y: y, fileName: fileName);
+  Future<List<HitTestResult>> performHitTest(double x, double y) async {
+    return await ARSceneController.instance.hitTest(x: x, y: y);
   }
 
   @override
-  Future<List<ArCoreHitTestResult>> performHitTest(double x, double y) async {
-    final hitTestResultRaw = await arViewChannel.invokeMethod<List<dynamic>?>(
-      'performHitTest',
-      {'x': x, 'y': y},
-    );
-
-    final hitTestResult =
-        hitTestResultRaw
-            ?.map((item) => ArCoreHitTestResult.fromMap(item))
-            .toList() ??
-        [];
-    return hitTestResult;
+  Future<void> sceneSnapshot() async {
+    await sceneChannel.invokeMethod<dynamic>('takeSnapshot');
   }
 }

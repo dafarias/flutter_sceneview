@@ -1,30 +1,36 @@
 package com.example.flutter_sceneview.controller
 
 import android.content.Context
+import android.graphics.Color
 import android.util.Log
 import com.example.flutter_sceneview.FlutterSceneviewPlugin
-import com.example.flutter_sceneview.models.NodeInfo
+import com.example.flutter_sceneview.models.nodes.FlutterArCoreShapeNode
+import com.example.flutter_sceneview.models.nodes.HitTestResult
+import com.example.flutter_sceneview.models.nodes.NodeInfo
 import com.example.flutter_sceneview.models.render.RenderInfo
+import com.example.flutter_sceneview.result.ARResult
 import com.example.flutter_sceneview.result.NodeResult
 import com.google.ar.core.Plane
 import com.google.ar.core.TrackingState
+import dev.romainguy.kotlin.math.Float3
+import dev.romainguy.kotlin.math.Quaternion
 import io.github.sceneview.ar.ARSceneView
 import io.github.sceneview.math.Position
-import io.github.sceneview.model.ModelInstance
 import io.github.sceneview.node.ModelNode
 import io.github.sceneview.loaders.ModelLoader
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
-import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterAssets
 import io.flutter.plugin.common.MethodChannel
 import io.github.sceneview.ar.arcore.createAnchorOrNull
+import io.github.sceneview.collision.Vector3
+import io.github.sceneview.math.Scale
+import io.github.sceneview.math.Transform
 import io.github.sceneview.model.Model
+import io.github.sceneview.node.Node
 import java.io.FileOutputStream
 import java.util.UUID
-import kotlin.random.Random
 
 class ARController(
     private val context: Context,
@@ -119,13 +125,17 @@ class ARController(
             physicalY = sceneView.height / 2f
             Log.i(TAG, "Placing node at scene center x=$physicalX, y=$physicalY")
         } else {
+            // Send render info with the initialization of the scene, if it changes
+            // then send it as an optional parameter
             val renderInfoMap = args["renderInfo"] as? Map<String, *>
+
             if (x == null || y == null || renderInfoMap == null) {
                 failureMessage = "Missing x/y or renderInfo for node placement."
                 Log.e(TAG, failureMessage)
                 return NodeResult.Failed(failureMessage)
             }
             val renderInfo = RenderInfo.fromMap(renderInfoMap)
+
             val (normalizedX, normalizedY) = normalizePoint(x, y, renderInfo) ?: run {
                 failureMessage = "Normalization failed"
                 Log.e(TAG, failureMessage)
@@ -188,6 +198,33 @@ class ARController(
         }
     }
 
+    fun addShapeNode(shape: FlutterArCoreShapeNode): NodeResult {
+        val material = sceneView.materialLoader.createColorInstance(Color.WHITE)
+        val shapeNode = shape.build(sceneView.engine, material)
+
+        if (shapeNode != null) {
+            shapeNode.name = UUID.randomUUID().toString()
+            shapeNode.position = shape.position!!
+            shapeNode.rotation = shape.rotation!!
+//            shapeNode.scale = Scale(1f, 1f, 1f) // TODO
+
+
+            sceneView.addChildNode(shapeNode)
+
+            val nodeInfo = NodeInfo(
+                nodeId = shapeNode.name!!,
+                position = shapeNode.position,
+                rotation = shapeNode.rotation,
+                scale = 0.1f,
+                // TODO: replace this with a Float3 instead of Float
+            )
+
+            return NodeResult.Placed(nodeInfo)
+        }
+
+        return NodeResult.Failed("Could not place shape node")
+    }
+
     //todo: Return success on node removal
     fun removeNode(nodeId: String): Unit { //NodeResult
         try {
@@ -204,7 +241,7 @@ class ARController(
         }
     }
 
-    fun removeAllNodes(): Unit { //NodeResult
+    fun removeAllNodes(): Unit {
         try {
             sceneView.childNodes.forEach { node ->
                 sceneView.removeChildNode(node)
@@ -217,24 +254,87 @@ class ARController(
     }
 
 
+    fun hitTest(args: Map<String, *>): ARResult {  //NodeResult
+        try {
+            val coordX = (args["x"] as? Double)?.toFloat()
+            val coordY = (args["y"] as? Double)?.toFloat()
+
+            val x = coordX?.toFloat()
+            val y = coordY?.toFloat()
+
+
+            val renderInfoMap = args["renderInfo"] as? Map<String, *>
+
+            if (x == null || y == null || renderInfoMap == null) {
+                return ARResult.Error("Missing x/y or renderInfo to hit test AR Scene")
+            }
+            val renderInfo = RenderInfo.fromMap(renderInfoMap)
+
+            val (normalizedX, normalizedY) = normalizePoint(x, y, renderInfo) ?: run {
+                Log.e(TAG, "Normalization failed")
+                return ARResult.Error("Normalization failed")
+            }
+
+            // Use normalizedX and normalizedY for  hit testing
+            val physicalX: Float = (normalizedX * sceneView.width).toFloat()
+            val physicalY: Float = (normalizedY * sceneView.height).toFloat()
+
+
+            val frame = sceneView.frame
+            if (frame != null) {
+                if (frame.camera.trackingState == TrackingState.TRACKING) {
+                    val hitList = frame.hitTest(physicalX, physicalY)
+                    val list = ArrayList<Map<String, Any>>()
+                    for (hit in hitList) {
+                        val trackable = hit.trackable
+                        if (trackable is Plane && trackable.isPoseInPolygon(hit.hitPose)) {
+                            hit.hitPose
+                            val distance: Float = hit.distance
+                            val translation = hit.hitPose.translation
+                            val rotation = hit.hitPose.rotationQuaternion
+                            val flutterArCoreHitTestResult =
+                                HitTestResult(distance, translation, rotation)
+                            val hitTestResult = flutterArCoreHitTestResult.toMap()
+                            list.add(hitTestResult)
+                        }
+                    }
+                    Log.i("HitTestResult", "$list")
+                    return ARResult.Hits(list)
+                }
+            }
+
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to remove all nodes from the scene ${e.message}")
+            //return NodeResult.Failed("Failed to remove nodes from the scene")
+        }
+        return ARResult.Hits(ArrayList<Map<String, Any>>())
+    }
+
+
     fun normalizePoint(
         xLogical: Float, yLogical: Float, renderInfo: RenderInfo
     ): Pair<Float, Float>? {
-        val pixelRatio = renderInfo.pixelRatio.toFloat()
+        try {
+            val pixelRatio = renderInfo.pixelRatio.toFloat()
 
-        val adjustedX = (xLogical * pixelRatio).toFloat()
-        val adjustedY = (yLogical * pixelRatio).toFloat()
+            val adjustedX = (xLogical * pixelRatio).toFloat()
+            val adjustedY = (yLogical * pixelRatio).toFloat()
 
-        val adjustedPosX = (renderInfo.position.dx * pixelRatio).toFloat()
-        val adjustedPosY = (renderInfo.position.dy * pixelRatio).toFloat()
+            val adjustedPosX = (renderInfo.position.dx * pixelRatio).toFloat()
+            val adjustedPosY = (renderInfo.position.dy * pixelRatio).toFloat()
 
-        val adjustedWidth = (renderInfo.size.width * pixelRatio).toFloat()
-        val adjustedHeight = (renderInfo.size.height * pixelRatio).toFloat()
+            val adjustedWidth = (renderInfo.size.width * pixelRatio).toFloat()
+            val adjustedHeight = (renderInfo.size.height * pixelRatio).toFloat()
 
-        val localX = ((adjustedX - adjustedPosX) / adjustedWidth).coerceIn(0f, 1f)
-        val localY = ((adjustedY - adjustedPosY) / adjustedHeight).coerceIn(0f, 1f)
+            val localX = ((adjustedX - adjustedPosX) / adjustedWidth).coerceIn(0f, 1f)
+            val localY = ((adjustedY - adjustedPosY) / adjustedHeight).coerceIn(0f, 1f)
 
-        return Pair(localX, localY)
+            return Pair(localX, localY)
+        } catch (e: Exception) {
+            Log.e(TAG, "Normalization failed ${e.message}")
+        }
+
+        return null
     }
 
 
@@ -249,6 +349,24 @@ class ARController(
         } catch (e: Exception) {
             Log.e(TAG, "Failed to load model: ${e.message}")
             null
+        }
+    }
+
+
+    fun transfomNode(node: Node?) {
+        try {
+
+            node?.transform(
+                Transform(
+                    position = node.position,//?: Position(),
+                    // Rotate around X),
+                    quaternion = Quaternion.fromAxisAngle(Float3(1.0f, 0.0f, 0.0f), 90f),
+                    scale = node.scale // ?: Scale(1.0f)
+                )
+            )
+
+        } catch (e: Exception) {
+            Log.e(TAG, " Failed to transform node with: ${e.message}")
         }
     }
 

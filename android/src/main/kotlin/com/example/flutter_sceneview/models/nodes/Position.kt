@@ -1,4 +1,4 @@
-package com.example.flutter_sceneview.models
+package com.example.flutter_sceneview.models.nodes
 
 import io.github.sceneview.math.Position
 

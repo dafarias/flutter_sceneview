@@ -1,8 +1,4 @@
 import 'package:flutter_sceneview/flutter_sceneview.dart';
-//todo: Add model import to the barrel file so it can be imported globally 
-// by the sceneview entry point
-import 'package:flutter_sceneview/src/entities/arcore_hit_test_result.dart';
-import 'package:flutter_sceneview/src/flutter_sceneview.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_sceneview/flutter_sceneview_platform_interface.dart';
 import 'package:flutter_sceneview/flutter_sceneview_method_channel.dart';
@@ -56,8 +52,20 @@ class MockFlutterSceneviewPlatform
   }
 
   @override
-  Future<List<ArCoreHitTestResult>> performHitTest(double x, double y) {
+  Future<Node?> addShapeNode(BaseShape shape) {
+    // TODO: implement addShapeNode
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<HitTestResult>> performHitTest(double x, double y) {
     // TODO: implement performHitTest
+    throw UnimplementedError();
+  }
+  
+  @override
+  Future<void> sceneSnapshot() {
+    // TODO: implement sceneSnapshot
     throw UnimplementedError();
   }
 }
