@@ -76,7 +76,8 @@ class MethodChannelFlutterSceneview extends FlutterSceneviewPlatform {
   }
 
   @override
-  Future<void> sceneSnapshot() async {
-    await sceneChannel.invokeMethod<dynamic>('takeSnapshot');
+  Future<Uint8List> sceneSnapshot() async {
+    final imageBytes = await sceneChannel.invokeMethod<Uint8List>('takeSnapshot');
+    return imageBytes ?? Uint8List.fromList([]);
   }
 }

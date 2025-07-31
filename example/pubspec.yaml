@@ -25,8 +25,16 @@ dependencies:
     # the parent directory to use the current plugin's version.
     path: ../
     
-  ultralytics_yolo: ^0.1.25
+  ultralytics_yolo: 0.1.25
   vector_math: ^2.1.4
+
+  # Dependencies used in provided examples (e.g. ultralytics_integration.dart)
+  # TODO: move these to dev_dependencies or remove completely if image saving to gallery is not needed
+  gal: ^2.3.0
+  image: ^4.4.0
+  path_provider: ^2.1.3
+  path: ^1.9.0
+  collection: ^1.18.0
 
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.

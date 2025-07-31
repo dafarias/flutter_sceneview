@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_sceneview/flutter_sceneview.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'flutter_sceneview_method_channel.dart';
@@ -69,7 +70,7 @@ abstract class FlutterSceneviewPlatform extends PlatformInterface {
     throw UnimplementedError("performHitTest() has not been implemented");
   }
 
-  Future<void> sceneSnapshot() {
+  Future<Uint8List> sceneSnapshot() {
     throw UnimplementedError("sceneSnapshot() has not been implemented");
   }
 
