@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_sceneview/flutter_sceneview.dart';
 import 'package:flutter_sceneview/flutter_sceneview_platform_interface.dart';
 
@@ -54,7 +55,7 @@ class FlutterSceneview {
     return FlutterSceneviewPlatform.instance.performHitTest(x, y);
   }
 
-  Future<void> sceneSnapshot() {
+  Future<Uint8List> sceneSnapshot() {
     return FlutterSceneviewPlatform.instance.sceneSnapshot();
   }
 }

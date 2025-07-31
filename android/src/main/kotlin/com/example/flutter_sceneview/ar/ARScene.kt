@@ -1,14 +1,12 @@
 package com.example.flutter_sceneview.ar
 
-import android.app.Activity
+import android.media.Image
 import android.content.Context
 import android.content.res.AssetManager
-import android.graphics.Bitmap
 import android.util.Log
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.example.flutter_sceneview.utils.SnapshotUtils
-import com.google.android.filament.*
 import com.google.android.filament.utils.KTX1Loader
 import io.github.sceneview.ar.ARSceneView
 import java.nio.ByteBuffer
@@ -16,16 +14,12 @@ import java.nio.ByteOrder
 import com.google.android.filament.EntityManager
 import com.google.android.filament.LightManager
 import com.google.android.filament.Skybox
-import com.google.android.filament.utils.rotation
-import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterAssets
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import kotlin.math.cos
 import kotlin.math.sin
-
-
 
 class ARScene(
     private val sceneView: ARSceneView,
@@ -56,7 +50,7 @@ class ARScene(
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
             "takeSnapshot" -> {
-                onTakeSnapshot(call, result)
+                onTakeSnapshot(result)
                 return
             }
 
@@ -206,36 +200,23 @@ class ARScene(
         }
     }
 
-    fun onTakeSnapshot(call: MethodCall, result: MethodChannel.Result) {
+    private fun onTakeSnapshot(result: MethodChannel.Result) {
         try {
-            Log.i(TAG, "takeSnapshot")
-            sceneSnapshot(sceneView.context as Activity) { byteArray ->
-                if (byteArray != null) {
-                    result.success(byteArray)
-                } else {
-                    result.error("SNAPSHOT_FAILED", "Failed to take snapshot.", null)
-                }
+            val image: Image? = sceneView.frame?.acquireCameraImage()
+            if (image != null) {
+                val bitmap = SnapshotUtils.convertYUVToBitmap(image)
+                image.close()
+
+                val portraitBitmap =
+                    SnapshotUtils.rotateToPortrait(bitmap)
+                val scaledBitmap =
+                    SnapshotUtils.scaleBitmap(portraitBitmap, sceneView.width, sceneView.height)
+                val byteArray = SnapshotUtils.bitmapToByteArray(scaledBitmap)
+
+                result.success(byteArray)
             }
         } catch (e: Exception) {
             result.error("FAILED_SNAPSHOT_ERROR", e.message ?: "Unknown error", null)
         }
     }
-
-    // Possible future implementation
-    fun sceneSnapshot(activity: Activity, callback: (ByteArray?) -> Unit) {
-        try {
-            SnapshotUtils.takePixelCopySnapshot(activity, sceneView) { bitmap ->
-                if (bitmap != null) {
-                    callback(SnapshotUtils.bitmapToByteArray(bitmap))
-
-                } else {
-                    callback(null)
-                }
-            }
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to create snapshot of the AR Scene: ${e.message}")
-        }
-    }
-
 }
