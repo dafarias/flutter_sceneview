@@ -1,6 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:vector_math/vector_math.dart';
+import 'package:vector_math/vector_math_64.dart';
 import 'package:flutter/foundation.dart';
+
 
 part 'node.freezed.dart';
 part 'node.g.dart';
@@ -14,7 +15,7 @@ abstract class Node with _$Node {
 
     @Vector3Converter() required Vector3 position,
 
-    @Vector3Converter() Vector3? rotation,
+    @Vector4Converter() Vector4? rotation,
   }) = _Node;
 
   const Node._();
@@ -27,7 +28,7 @@ abstract class Node with _$Node {
 
   static final empty = _Node(
     position: Vector3.zero(),
-    rotation: Vector3.zero(),
+    rotation: Vector4.zero(),
   );
 }
 

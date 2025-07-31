@@ -53,7 +53,7 @@ final GlobalKey _arViewKey = GlobalKey();
     const Map<String, dynamic> creationParams = <String, dynamic>{};
 
     if (!_hasPermission) {
-      return const Center(child: Text("Waiting for camera permission..."));
+      return const Center(child: Text("Waiting for camera permissions..."));
     }
 
     return PlatformViewLink(
