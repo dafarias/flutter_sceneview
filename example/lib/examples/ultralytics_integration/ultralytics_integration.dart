@@ -3,7 +3,7 @@ import 'package:flutter_sceneview/flutter_sceneview.dart';
 import 'package:flutter_sceneview_example/examples/ultralytics_integration/ball_detection.dart';
 import 'package:flutter_sceneview_example/examples/ultralytics_integration/detection_result.dart';
 import 'package:flutter_sceneview_example/examples/ultralytics_integration/detection_service.dart';
-import 'package:vector_math/vector_math.dart' hide Colors, Sphere;
+import 'package:vector_math/vector_math_64.dart' hide Colors, Sphere;
 
 class UltralyticsIntegration extends StatefulWidget {
   const UltralyticsIntegration({super.key});
@@ -141,7 +141,7 @@ class _UltralyticsIntegrationState extends State<UltralyticsIntegration> {
 
       final ballWorldPosition = worldPositions.first.pose.translation;
       final ballRot = worldPositions.first.pose.rotation;
-      final ballWorldRotation = Vector3(ballRot.x, ballRot.y, ballRot.z);
+      final ballWorldRotation = ballRot;
 
       final node = Node(
         position: ballWorldPosition,

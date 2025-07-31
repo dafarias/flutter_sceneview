@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_sceneview/flutter_sceneview.dart';
-import 'package:vector_math/vector_math.dart' hide Sphere;
+import 'package:vector_math/vector_math_64.dart' hide Sphere;
 
 class Playground extends StatefulWidget {
   const Playground({super.key});
@@ -32,7 +32,7 @@ class _PlaygroundState extends State<Playground> {
     try {
       platformVersion =
           await _flutterSceneviewPlugin.getPlatformVersion() ??
-              'Unknown platform version';
+          'Unknown platform version';
     } on PlatformException {
       platformVersion = 'Failed to get platform version.';
     }
@@ -105,7 +105,7 @@ class _PlaygroundState extends State<Playground> {
     }
   }
 
-  void placeShapeNode(Vector3 position, Vector3 rotation) async {
+  void placeShapeNode(Vector3 position, Vector4 rotation) async {
     final node = Node(position: position, rotation: rotation);
     final material = BaseMaterial(color: Color.fromARGB(255, 255, 255, 255));
     final sphere = Sphere(node, material: material, radius: 0.05);
@@ -133,13 +133,29 @@ class _PlaygroundState extends State<Playground> {
     }
 
     final hitTestResult = results.first.pose;
-    placeShapeNode(
-      hitTestResult.translation,
-      Vector3(
-        hitTestResult.rotation.x,
-        hitTestResult.rotation.y,
-        hitTestResult.rotation.z,
-      ),
+    placeShapeNode(hitTestResult.translation, hitTestResult.rotation);
+  }
+
+  void goToScene() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const Scene()),
+    );
+  }
+}
+
+
+/// In case we need to test the life cycle events we can just create
+/// a scene widget on a new page and then detect the changes based on the
+/// behavior of the navigation
+class Scene extends StatelessWidget {
+  const Scene({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Scene view screen')),
+      body: SceneView(),
     );
   }
 }
