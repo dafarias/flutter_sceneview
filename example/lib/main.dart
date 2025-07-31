@@ -6,7 +6,7 @@ import 'package:flutter_sceneview/flutter_sceneview.dart';
 import 'package:vector_math/vector_math.dart' hide Sphere;
 
 void main() {
-  runApp(const MyApp());
+  runApp(const MaterialApp(home: MyApp()));
 }
 
 class MyApp extends StatefulWidget {
@@ -56,43 +56,41 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     debugPrint('Running on: $_platformVersion\n');
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(title: const Text('Plugin example app')),
-        body: Center(
-          child: SceneView(
-            onViewCreated: (controller) => _controller = controller,
-          ),
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('Plugin example app')),
+      body: Center(
+        child: SceneView(
+          onViewCreated: (controller) => _controller = controller,
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            placeNode();
-          },
-          child: Icon(Icons.place),
-        ),
+      ),
 
-        bottomSheet: SizedBox(
-          height: 60,
-          child: Row(
-            children: <Widget>[
-              ElevatedButton(
-                onPressed: () {
-                  removeById(nodeId: placedNodes.firstOrNull?.nodeId ?? "");
-                },
-                child: Text('Remove by id'),
-              ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          // goToScene();
+          placeNode();
+        },
+        child: Icon(Icons.place),
+      ),
 
-              SizedBox(width: 20),
+      bottomSheet: SizedBox(
+        height: 60,
+        child: Row(
+          children: <Widget>[
+            ElevatedButton(
+              onPressed: () {
+                removeById(nodeId: placedNodes.firstOrNull?.nodeId ?? "");
+              },
+              child: Text('Remove by id'),
+            ),
 
-              ElevatedButton(onPressed: onRemoveAll, child: Text('Remove all')),
-              SizedBox(width: 20),
+            SizedBox(width: 20),
 
-              ElevatedButton(
-                onPressed: _handleHitTest,
-                child: Text('Hit test'),
-              ),
-            ],
-          ),
+            ElevatedButton(onPressed: onRemoveAll, child: Text('Remove all')),
+            SizedBox(width: 20),
+
+            ElevatedButton(onPressed: _handleHitTest, child: Text('Hit test')),
+          ],
         ),
       ),
     );
@@ -162,6 +160,28 @@ class _MyAppState extends State<MyApp> {
         hitTestResult.rotation.y,
         hitTestResult.rotation.z,
       ),
+    );
+  }
+
+  void goToScene() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => const Scene()),
+    );
+  }
+}
+
+/// In case we need to test the life cycle events we can just create
+/// a scene widget on a new page and then detect the changes based on the
+/// behavior of the navigation
+class Scene extends StatelessWidget {
+  const Scene({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Scene view screen')),
+      body: SceneView(),
     );
   }
 }

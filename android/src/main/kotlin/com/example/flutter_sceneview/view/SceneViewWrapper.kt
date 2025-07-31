@@ -43,10 +43,9 @@ class SceneViewWrapper(
     }
 
     override fun dispose() {
+        // Dispose / destroy all the handlers here as well
         Log.i(TAG, "dispose")
         _channel.setMethodCallHandler(null)
-        // Dispose / destroy all the handlers here as well
-        // Like ex: ARScene
     }
 
     // Create DTO or Model class to send in the configuration params
@@ -112,6 +111,11 @@ class SceneViewWrapper(
                 result.success(null)
             }
 
+            "dispose" -> {
+                dispose()
+                result.success(null)
+            }
+
             "addNode" -> {
                 _mainScope.launch {
                     onAddNode(call, result)
@@ -120,9 +124,7 @@ class SceneViewWrapper(
             }
 
             "addShapeNode" -> {
-//                _mainScope.launch {
                 onAddShapeNode(call, result)
-//                }
                 return
             }
 

@@ -9,6 +9,8 @@ class MethodChannelFlutterSceneview extends FlutterSceneviewPlatform {
   /// The method channel used to interact with the native platform.
   @visibleForTesting
   final methodChannel = const MethodChannel('flutter_sceneview');
+
+  //Todo: Will be moved to its own method channel handler
   final sceneChannel = const MethodChannel('ar_scene');
 
   @override

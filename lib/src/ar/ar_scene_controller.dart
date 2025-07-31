@@ -8,7 +8,8 @@ class ARSceneController {
   final int sceneId;
   final GlobalKey arViewKey;
   final MethodChannel _arChannel = const MethodChannel('ar_view_wrapper');
-  static late final ARSceneController instance;
+
+  static late ARSceneController instance;
   bool _initialized = false;
 
   ARSceneController._({required this.sceneId, required this.arViewKey});
@@ -28,20 +29,17 @@ class ARSceneController {
       sceneId: sceneId,
       arViewKey: arViewKey,
     );
-
+    instance = controller;
     await controller._init();
     return controller;
   }
 
   Future<void> _init() async {
-    if (isInitialized) {
-      return;
-    } else {
-      instance = this;
-      SceneUtils.arViewKey = arViewKey;
-      await _arChannel.invokeMethod('init');
-      _initialized = true;
-    }
+    if (isInitialized) return;
+
+    SceneUtils.arViewKey = arViewKey;
+    await _arChannel.invokeMethod('init');
+    _initialized = true;
   }
 
   //TODO: Maybe its better to return null if the node is empty or if an exception
@@ -171,6 +169,11 @@ class ARSceneController {
   }
 
   Future<void> dispose() async {
-    await _arChannel.invokeMethod('dispose', sceneId);
+    try {
+      await _arChannel.invokeMethod('dispose', sceneId);
+    } catch (e) {
+      debugPrint('ARSceneController dispose error: $e');
+    }
+    _initialized = false;
   }
 }
