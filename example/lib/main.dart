@@ -3,7 +3,7 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 import 'package:flutter_sceneview/flutter_sceneview.dart';
-import 'package:vector_math/vector_math.dart' hide Sphere;
+import 'package:vector_math/vector_math_64.dart' hide Sphere;
 
 void main() {
   runApp(const MaterialApp(home: MyApp()));
@@ -109,7 +109,7 @@ class _MyAppState extends State<MyApp> {
     }
   }
 
-  void placeShapeNode(Vector3 position, Vector3 rotation) async {
+  void placeShapeNode(Vector3 position, Vector4 rotation) async {
     final node = Node(position: position, rotation: rotation);
     final material = BaseMaterial(color: Color.fromARGB(255, 255, 255, 255));
     final sphere = Sphere(node, material: material, radius: 0.05);
@@ -153,14 +153,7 @@ class _MyAppState extends State<MyApp> {
     }
 
     final hitTestResult = results.first.pose;
-    placeShapeNode(
-      hitTestResult.translation,
-      Vector3(
-        hitTestResult.rotation.x,
-        hitTestResult.rotation.y,
-        hitTestResult.rotation.z,
-      ),
-    );
+    placeShapeNode(hitTestResult.translation, hitTestResult.rotation);
   }
 
   void goToScene() {

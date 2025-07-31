@@ -10,9 +10,9 @@ _Node _$NodeFromJson(Map<String, dynamic> json) => _Node(
   nodeId: json['nodeId'] as String? ?? "",
   scale: (json['scale'] as num?)?.toDouble() ?? 0.1,
   position: const Vector3Converter().fromJson(json['position'] as Map),
-  rotation: _$JsonConverterFromJson<Map<Object?, Object?>, Vector3>(
+  rotation: _$JsonConverterFromJson<Map<Object?, Object?>, Vector4>(
     json['rotation'],
-    const Vector3Converter().fromJson,
+    const Vector4Converter().fromJson,
   ),
 );
 
@@ -20,9 +20,9 @@ Map<String, dynamic> _$NodeToJson(_Node instance) => <String, dynamic>{
   'nodeId': instance.nodeId,
   'scale': instance.scale,
   'position': const Vector3Converter().toJson(instance.position),
-  'rotation': _$JsonConverterToJson<Map<Object?, Object?>, Vector3>(
+  'rotation': _$JsonConverterToJson<Map<Object?, Object?>, Vector4>(
     instance.rotation,
-    const Vector3Converter().toJson,
+    const Vector4Converter().toJson,
   ),
 };
 
