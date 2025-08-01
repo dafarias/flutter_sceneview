@@ -28,6 +28,7 @@ import io.github.sceneview.node.Node
 import java.io.FileOutputStream
 import java.util.UUID
 import androidx.core.graphics.createBitmap
+import io.github.sceneview.ar.arcore.quaternion
 import io.github.sceneview.node.ImageNode
 
 class ARController(
@@ -189,7 +190,7 @@ class ARController(
             val nodeInfo = NodeInfo(
                 nodeId = node.name ?: "",
                 position = hitPosition,
-                rotation = node.rotation,
+                rotation = hitResultAnchor.pose.quaternion,
                 scale = 0.1f
             )
             return NodeResult.Placed(node = nodeInfo)
@@ -214,7 +215,8 @@ class ARController(
             val nodeInfo = NodeInfo(
                 nodeId = shapeNode.name!!,
                 position = shapeNode.position,
-                rotation = shapeNode.rotation,
+                // Needs hitResultAnchor.pose.quaternion,
+//                rotation = shapeNode.rotation,
                 scale = 0.1f,
                 // TODO: replace this with a Float3 instead of Float
             )
