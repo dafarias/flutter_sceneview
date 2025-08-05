@@ -81,7 +81,6 @@ class _UltralyticsIntegrationState extends State<UltralyticsIntegration> {
       await _placeArRings(holePosition);
 
       return await _placeArBalls(holePosition, detectionResult.balls);
-      return await _placeArBalls(Vector3(0, 0, 0), detectionResult.balls);
     } catch (_) {
       return [];
     }
