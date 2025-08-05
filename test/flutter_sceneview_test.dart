@@ -77,6 +77,7 @@ class MockFlutterSceneviewPlatform
     double y = 0,
     double size = 1,
     String? fontFamily,
+    bool normalize = false,
   }) {
     // TODO: implement addTextNode
     throw UnimplementedError();
