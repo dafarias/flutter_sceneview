@@ -61,26 +61,26 @@ class _UltralyticsIntegrationState extends State<UltralyticsIntegration> {
     DetectionResult detectionResult,
   ) async {
     try {
-    //   if (detectionResult.hole == null) {
-    //     return [];
-    //   }
-    //
-    //   final detectedHolePosition = detectionResult.hole?.boundingBox?.center;
-    //   final holeWorldPositions = await _arSceneController.hitTest(
-    //     x: detectedHolePosition!.dx,
-    //     y: detectedHolePosition.dy,
-    //   );
-    //
-    //   if (holeWorldPositions.isEmpty) {
-    //     throw Exception('No hole found');
-    //   }
-    //
-    //   final holePosition = holeWorldPositions.first.pose.translation;
-    //
-    //   await _placeArFlag(detectedHolePosition);
-    //   await _placeArRings(holePosition);
-    //
-    //   return await _placeArBalls(holePosition, detectionResult.balls);
+      if (detectionResult.hole == null) {
+        return [];
+      }
+
+      final detectedHolePosition = detectionResult.hole?.boundingBox?.center;
+      final holeWorldPositions = await _arSceneController.hitTest(
+        x: detectedHolePosition!.dx,
+        y: detectedHolePosition.dy,
+      );
+
+      if (holeWorldPositions.isEmpty) {
+        throw Exception('No hole found');
+      }
+
+      final holePosition = holeWorldPositions.first.pose.translation;
+
+      await _placeArFlag(detectedHolePosition);
+      await _placeArRings(holePosition);
+
+      return await _placeArBalls(holePosition, detectionResult.balls);
       return await _placeArBalls(Vector3(0, 0, 0), detectionResult.balls);
     } catch (_) {
       return [];
