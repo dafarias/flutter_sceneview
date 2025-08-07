@@ -208,12 +208,6 @@ class ARScene(
     }
 
     private fun onTakeSnapshot(result: MethodChannel.Result) {
-        val activity = sceneView.context as? Activity
-        if (activity == null) {
-            result.error("FAILED_SNAPSHOT_ERROR", "Context is not an Activity", null)
-            return
-        }
-
         sceneView.planeRenderer.isVisible = false
 
         // Creation of snapshot is delayed so we ensure that the plane has been hidden
@@ -229,7 +223,7 @@ class ARScene(
                         }
                     }
                 } else {
-                    result.error("FAILED_SNAPSHOT_ERROR", "PixelCopy failed", null)
+                    result.error("FAILED_SNAPSHOT_ERROR", "PixelCopy failed to create snapshot", null)
                 }
             }
         }
