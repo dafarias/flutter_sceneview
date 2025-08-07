@@ -1,11 +1,13 @@
 import 'package:vector_math/vector_math_64.dart';
 
 class Pose {
-  late Vector3 translation;
-  late Vector4 rotation;
+  late Vector3 position;
+  late Vector3 rotation;
+  late Vector4 quaternion;
 
   Pose.fromMap(Map<dynamic, dynamic> map) {
-    translation = Vector3.array(map["translation"]);
-    rotation = Vector4.array(map["rotation"]);
+    position = Vector3.array(map["position"]);
+    rotation = Vector3.array(map["rotation"]);
+    quaternion = Vector4.array(map["quaternion"]);
   }
 }

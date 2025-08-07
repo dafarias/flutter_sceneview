@@ -10,7 +10,6 @@ fun Position.toMap(): Map<String, Float> = mapOf(
     "z" to z,
 )
 
-
 fun Quaternion.toMap(): Map<String, Float> = mapOf(
     "x" to x,
     "y" to y,
@@ -18,11 +17,18 @@ fun Quaternion.toMap(): Map<String, Float> = mapOf(
     "w" to w,
 )
 
+fun positionFromMap(map: Map<*, *>): Position? {
+    val x = (map["x"] as? Number)?.toFloat() ?: return null
+    val y = (map["y"] as? Number)?.toFloat() ?: return null
+    val z = (map["z"] as? Number)?.toFloat() ?: return null
+    return Position(x, y, z)
+}
 
-// extend your Position with a from‑map factory
-//fun Position.Companion.fromMap(map: Map<String, Any?>): Position {
-//    val x = (map["x"] as Number).toFloat()
-//    val y = (map["y"] as Number).toFloat()
-//    val z = (map["z"] as Number).toFloat()
-//    return Position(x, y, z)
-//}
+
+fun rotationQuaternionFromMap(map: Map<*, *>): Quaternion? {
+    val x = (map["x"] as? Number)?.toFloat() ?: return null
+    val y = (map["y"] as? Number)?.toFloat() ?: return null
+    val z = (map["z"] as? Number)?.toFloat() ?: return null
+    val w = (map["w"] as? Number)?.toFloat() ?: return null
+    return Quaternion(x, y, z, w)
+}

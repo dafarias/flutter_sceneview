@@ -11,11 +11,9 @@ abstract class Node with _$Node {
   @JsonSerializable(explicitToJson: true)
   const factory Node({
     @Default("") String nodeId,
-    @Default(0.1) double scale,
-
     @Vector3Converter() required Vector3 position,
-
-    @Vector4Converter() Vector4? rotation,
+    @Vector3Converter() Vector3? rotation,
+    @Vector3Converter() Vector3? scale,
   }) = _Node;
 
   const Node._();
@@ -28,7 +26,8 @@ abstract class Node with _$Node {
 
   static final empty = _Node(
     position: Vector3.zero(),
-    rotation: Vector4.zero(),
+    rotation: Vector3.zero(),
+    scale: Vector3.all(1.0),
   );
 }
 

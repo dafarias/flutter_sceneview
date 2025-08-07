@@ -28,7 +28,12 @@ import io.github.sceneview.node.Node
 import java.io.FileOutputStream
 import java.util.UUID
 import androidx.core.graphics.createBitmap
+import com.example.flutter_sceneview.models.materials.BaseMaterial
+import com.example.flutter_sceneview.models.shapes.BaseShape
+import io.github.sceneview.ar.arcore.position
 import io.github.sceneview.ar.arcore.quaternion
+import io.github.sceneview.ar.arcore.rotation
+import io.github.sceneview.math.toRotation
 import io.github.sceneview.node.ImageNode
 
 class ARController(
@@ -190,8 +195,8 @@ class ARController(
             val nodeInfo = NodeInfo(
                 nodeId = node.name ?: "",
                 position = hitPosition,
-                rotation = hitResultAnchor.pose.quaternion,
-                scale = 0.1f
+                rotation = hitResultAnchor.pose.rotation,
+                scale = node.scale
             )
             return NodeResult.Placed(node = nodeInfo)
         } catch (e: Exception) {
@@ -200,31 +205,54 @@ class ARController(
         }
     }
 
-    fun addShapeNode(shape: FlutterArCoreShapeNode): NodeResult {
-        val material = sceneView.materialLoader.createColorInstance(Color.WHITE)
-        val shapeNode = shape.build(sceneView.engine, material)
+    fun addShapeNode(args: Map<*, *>): NodeResult {
+        try {
+            val material =
+                BaseMaterial.fromMap(args["material"] as? Map<*, *> ?: emptyMap<String, Any?>())
+                    ?: return NodeResult.Failed("Invalid material")
 
-        if (shapeNode != null) {
+            val shapeNode = BaseShape.fromMap(args)?.toNode(
+                sceneView.engine, sceneView.materialLoader.createColorInstance(
+                    color = material.color,
+                    metallic = material.metallic,
+                    roughness = material.roughness,
+                    reflectance = material.reflectance
+                )
+            ) ?: return NodeResult.Failed("Invalid shape")
+
+
+            val positionMap =
+                args["position"] as? Map<*, *> ?: return NodeResult.Failed("Missing position")
+            val position =
+                positionFromMap(positionMap) ?: return NodeResult.Failed("Invalid position")
+
+            val rotationMap =
+                args["rotation"] as? Map<*, *> ?: return NodeResult.Failed("Missing rotation")
+            val rotation =
+                positionFromMap(rotationMap) ?: return NodeResult.Failed("Invalid rotation")
+
+
+
             shapeNode.name = UUID.randomUUID().toString()
-            shapeNode.position = shape.position!!
-            shapeNode.rotation = shape.rotation!!
-//            shapeNode.scale = Scale(1f, 1f, 1f) // TODO
+            shapeNode.position = position
+            shapeNode.rotation = rotation
+            // TODO // shapeNode.scale = Scale(1f, 1f, 1f)
 
             sceneView.addChildNode(shapeNode)
+
 
             val nodeInfo = NodeInfo(
                 nodeId = shapeNode.name!!,
                 position = shapeNode.position,
-                // Needs hitResultAnchor.pose.quaternion,
-//                rotation = shapeNode.rotation,
-                scale = 0.1f,
-                // TODO: replace this with a Float3 instead of Float
+                rotation = shapeNode.rotation,
+                scale = shapeNode.scale,
             )
-
             return NodeResult.Placed(nodeInfo)
+
+        } catch (e: Exception) {
+            return NodeResult.Failed("Could not place shape node")
         }
 
-        return NodeResult.Failed("Could not place shape node")
     }
 
     //todo: Return success on node removal
@@ -256,12 +284,12 @@ class ARController(
     }
 
 
-    fun hitTest(args: Map<String, *>): ARResult {  //NodeResult
+    fun hitTest(args: Map<*, *>): ARResult {  //NodeResult
         try {
             val coordX = (args["x"] as? Double)?.toFloat()
             val coordY = (args["y"] as? Double)?.toFloat()
 
-            val renderInfoMap = args["renderInfo"] as? Map<String, *>
+            val renderInfoMap = args["renderInfo"] as? Map<*, *>
 
             if (coordX == null || coordY == null || renderInfoMap == null) {
                 return ARResult.Error("Missing x/y or renderInfo to hit test AR Scene")
@@ -289,14 +317,10 @@ class ARController(
                     for (hit in hitList) {
                         val trackable = hit.trackable
                         if (trackable is Plane && trackable.isPoseInPolygon(hit.hitPose)) {
-                            hit.hitPose
-                            val distance: Float = hit.distance
-                            val translation = hit.hitPose.translation
-                            val rotation = hit.hitPose.rotationQuaternion
-                            val flutterArCoreHitTestResult =
-                                HitTestResult(distance, translation, rotation)
-                            val hitTestResult = flutterArCoreHitTestResult.toMap()
-                            list.add(hitTestResult)
+                            hit.hitPose.position
+                            print(hit.hitPose.translation)
+                            // Translation is the same as Position
+                            list.add(HitTestResult(hit.distance, hit.hitPose).toMap())
                         }
                     }
                     Log.i("HitTestResult", "$list")
@@ -313,24 +337,29 @@ class ARController(
 
 
     fun normalizePoint(
-        xLogical: Float, yLogical: Float, renderInfo: RenderInfo
+        xLogical: Float, yLogical: Float, renderInfo: RenderInfo?
     ): Pair<Float, Float>? {
         try {
-            val pixelRatio = renderInfo.pixelRatio.toFloat()
 
-            val adjustedX = (xLogical * pixelRatio)
-            val adjustedY = (yLogical * pixelRatio)
+            return if (renderInfo != null) {
+                val pixelRatio = renderInfo.pixelRatio.toFloat()
 
-            val adjustedPosX = (renderInfo.position.dx * pixelRatio).toFloat()
-            val adjustedPosY = (renderInfo.position.dy * pixelRatio).toFloat()
+                val adjustedX = (xLogical * pixelRatio)
+                val adjustedY = (yLogical * pixelRatio)
 
-            val adjustedWidth = (renderInfo.size.width * pixelRatio).toFloat()
-            val adjustedHeight = (renderInfo.size.height * pixelRatio).toFloat()
+                val adjustedPosX = (renderInfo.position.dx * pixelRatio).toFloat()
+                val adjustedPosY = (renderInfo.position.dy * pixelRatio).toFloat()
 
-            val localX = ((adjustedX - adjustedPosX) / adjustedWidth).coerceIn(0f, 1f)
-            val localY = ((adjustedY - adjustedPosY) / adjustedHeight).coerceIn(0f, 1f)
+                val adjustedWidth = (renderInfo.size.width * pixelRatio).toFloat()
+                val adjustedHeight = (renderInfo.size.height * pixelRatio).toFloat()
 
-            return Pair(localX, localY)
+                val localX = ((adjustedX - adjustedPosX) / adjustedWidth).coerceIn(0f, 1f)
+                val localY = ((adjustedY - adjustedPosY) / adjustedHeight).coerceIn(0f, 1f)
+
+                return Pair(localX, localY)
+
+            } else null
+
         } catch (e: Exception) {
             Log.e(TAG, "Normalization failed ${e.message}")
         }
@@ -354,7 +383,7 @@ class ARController(
     }
 
     fun addTextNode(
-        args: Map<String, *>,
+        args: Map<*, *>,
     ) {
         val text = args["text"] as? String ?: ""
         val nodeScale = args["scale"] as? Float3 ?: Float3()
@@ -363,13 +392,13 @@ class ARController(
         val fontFamily = args["fontFamily"] as? String
 
         // The size can be a single float value of N = meters, like 0.02 , etc.
-        // This size represents the widht of the image / bitmap (in meters)
+        // This size represents the width of the image / bitmap (in meters)
         val size = (args["size"] as? Number)?.toFloat() ?: 1f
 
         //Temporary measure, color equivalent needs to be worked on
         val textColor = args["textColor"] as? Int ?: Color.WHITE
 
-        val renderInfoMap = args["renderInfo"] as? Map<String, *>
+        val renderInfoMap = args["renderInfo"] as? Map<*, *>
 
         if (x == null || y == null || renderInfoMap == null) {
             return

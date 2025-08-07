@@ -117,6 +117,8 @@ class FlutterSceneviewPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, A
     }
 
 
+
+    //TODO: Move this to the right subpackage division or handler
     private fun handleCheckPermissions(result: MethodChannel.Result) {
         try {
             Log.i(TAG, "Requesting permissions")

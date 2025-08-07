@@ -8,7 +8,6 @@ import androidx.lifecycle.Lifecycle
 import com.example.flutter_sceneview.FlutterSceneviewPlugin
 import com.example.flutter_sceneview.ar.ARScene
 import com.example.flutter_sceneview.controller.ARController
-import com.example.flutter_sceneview.models.nodes.FlutterArCoreShapeNode
 import com.example.flutter_sceneview.result.NodeResult
 import com.example.flutter_sceneview.result.ARResult
 import com.google.ar.core.Config
@@ -188,7 +187,7 @@ class SceneViewWrapper(
 
     private fun onAddShapeNode(call: MethodCall, result: MethodChannel.Result) {
         try {
-            val args = call.arguments as? Map<String, *>
+            val args = call.arguments as? Map<*, *>
 
             if (args == null) {
                 result.error(
@@ -199,8 +198,7 @@ class SceneViewWrapper(
 
             _mainScope.launch {
                 try {
-                    val flutterShapeNode = FlutterArCoreShapeNode(args)
-                    val nodeResult = _controller.addShapeNode(flutterShapeNode)
+                    val nodeResult = _controller.addShapeNode(args)
                     when (nodeResult) {
                         is NodeResult.Placed -> {
                             result.success(nodeResult.node.toMap())
@@ -251,7 +249,7 @@ class SceneViewWrapper(
     fun onHitTest(call: MethodCall, result: MethodChannel.Result) {
         try {
             Log.i(TAG, "performHitTest")
-            val args = call.arguments as? Map<String, *>
+            val args = call.arguments as? Map<*, *>
             if (args == null) {
                 result.error(
                     "INVALID_ARGUMENTS",
@@ -285,7 +283,7 @@ class SceneViewWrapper(
     fun onAddTextNode(call: MethodCall, result: MethodChannel.Result) {
         try {
             Log.i(TAG, "performHitTest")
-            val args = call.arguments as? Map<String, *>
+            val args = call.arguments as? Map<*, *>
             if (args == null) {
                 result.error(
                     "INVALID_ARGUMENTS",

@@ -1,5 +1,8 @@
 package com.example.flutter_sceneview.models.shapes
 
+import android.util.Log
+import com.example.flutter_sceneview.models.shapes.Cube.Companion.DEFAULT_CENTER
+import com.example.flutter_sceneview.models.shapes.Cube.Companion.DEFAULT_SIZE
 import com.google.android.filament.Engine
 import com.google.android.filament.MaterialInstance
 import dev.romainguy.kotlin.math.Float3
@@ -13,13 +16,16 @@ import kotlin.math.sqrt
 
 
 class Torus(
-    val majorRadius: Float = DEFAULT_MAJOR_RADIUS,
-    val minorRadius: Float = DEFAULT_MINOR_RADIUS
+    val majorRadius: Float = DEFAULT_MAJOR_RADIUS, val minorRadius: Float = DEFAULT_MINOR_RADIUS
 ) : BaseShape() {
 
     override val shapeType = Shapes.TORUS
 
-    override fun build(engine: Engine, material: MaterialInstance?): Node {
+    override fun toString(): String {
+        return "BaseShape: ${this.shapeType.name}"
+    }
+
+    override fun toNode(engine: Engine, material: MaterialInstance?): Node {
         return createTorusNode(
             engine,
             majorRadius = majorRadius,
@@ -40,21 +46,28 @@ class Torus(
         const val DEFAULT_MAJOR_RADIUS = 0.1f
         const val DEFAULT_MINOR_RADIUS = 0.03f
 
-        fun fromMap(map: Map<String, Any?>): Torus {
-            val major = (map["majorRadius"] as? Double)?.toFloat() ?: DEFAULT_MAJOR_RADIUS
-            val minor = (map["minorRadius"] as? Double)?.toFloat() ?: DEFAULT_MINOR_RADIUS
-            return Torus(major, minor)
+        fun fromMap(map: Map<*, *>): Torus? {
+            try {
+                val major = (map["majorRadius"] as? Double)?.toFloat() ?: DEFAULT_MAJOR_RADIUS
+                val minor = (map["minorRadius"] as? Double)?.toFloat() ?: DEFAULT_MINOR_RADIUS
+                return Torus(major, minor)
+            } catch (e: Exception) {
+                Log.e(
+                    toString(), "Failed to deserialize json object: ${e.cause}"
+                )
+                return null
+            }
         }
     }
 
     //TODO: Rename maybe the build method to: toNode for example, or buildNode
     fun createTorusNode(
-    engine: Engine,
-    majorRadius: Float = 0.5f,
-    minorRadius: Float = 0.2f,
-    segmentsU: Int = 64,
-    segmentsV: Int = 128,
-    materialInstance: MaterialInstance?
+        engine: Engine,
+        majorRadius: Float = 0.5f,
+        minorRadius: Float = 0.2f,
+        segmentsU: Int = 64,
+        segmentsV: Int = 128,
+        materialInstance: MaterialInstance?
     ): GeometryNode {
         val vertices = mutableListOf<Geometry.Vertex>()
         val indices = mutableListOf<Int>()
@@ -90,8 +103,7 @@ class Torus(
 
                 vertices.add(
                     Geometry.Vertex(
-                        position = Position(x, y, z),
-                        normal = Position(nx, ny, nz)
+                        position = Position(x, y, z), normal = Position(nx, ny, nz)
                     )
                 )
             }
@@ -115,15 +127,12 @@ class Torus(
             }
         }
 
-        val geometry = Geometry.Builder()
-            .vertices(vertices)
+        val geometry = Geometry.Builder().vertices(vertices)
             .indices(indices) // fix indices type here if needed
             .build(engine)
 
         return GeometryNode(
-            engine = engine,
-            geometry = geometry,
-            materialInstance = materialInstance
+            engine = engine, geometry = geometry, materialInstance = materialInstance
         )
     }
 
