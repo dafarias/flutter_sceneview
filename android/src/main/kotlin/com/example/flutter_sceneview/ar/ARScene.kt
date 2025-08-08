@@ -1,9 +1,11 @@
 package com.example.flutter_sceneview.ar
 
-import android.media.Image
+import android.app.Activity
 import android.content.Context
 import android.content.res.AssetManager
 import android.util.Log
+import android.view.SurfaceView
+import androidx.core.view.postDelayed
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.example.flutter_sceneview.utils.SnapshotUtils
@@ -13,11 +15,16 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import com.google.android.filament.EntityManager
 import com.google.android.filament.LightManager
+import com.google.android.filament.Material
 import com.google.android.filament.Skybox
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -201,22 +208,24 @@ class ARScene(
     }
 
     private fun onTakeSnapshot(result: MethodChannel.Result) {
-        try {
-            val image: Image? = sceneView.frame?.acquireCameraImage()
-            if (image != null) {
-                val bitmap = SnapshotUtils.convertYUVToBitmap(image)
-                image.close()
+        sceneView.planeRenderer.isVisible = false
 
-                val portraitBitmap =
-                    SnapshotUtils.rotateToPortrait(bitmap)
-                val scaledBitmap =
-                    SnapshotUtils.scaleBitmap(portraitBitmap, sceneView.width, sceneView.height)
-                val byteArray = SnapshotUtils.bitmapToByteArray(scaledBitmap)
+        // Creation of snapshot is delayed so we ensure that the plane has been hidden
+        sceneView.postDelayed(20) {
+            SnapshotUtils.pixelCopyBitmap(sceneView as SurfaceView) { bitmap ->
+                if (bitmap != null) {
+                    CoroutineScope(Dispatchers.Default).launch {
+                        val byteArray = SnapshotUtils.bitmapToByteArray(bitmap)
 
-                result.success(byteArray)
+                        withContext(Dispatchers.Main) {
+                            sceneView.planeRenderer.isVisible = true
+                            result.success(byteArray)
+                        }
+                    }
+                } else {
+                    result.error("FAILED_SNAPSHOT_ERROR", "PixelCopy failed to create snapshot", null)
+                }
             }
-        } catch (e: Exception) {
-            result.error("FAILED_SNAPSHOT_ERROR", e.message ?: "Unknown error", null)
         }
     }
 }
