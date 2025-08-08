@@ -3,6 +3,7 @@ package com.example.flutter_sceneview.ar
 import android.app.Activity
 import android.content.Context
 import android.content.res.AssetManager
+import android.media.Image
 import android.util.Log
 import android.view.SurfaceView
 import androidx.core.view.postDelayed
@@ -208,23 +209,27 @@ class ARScene(
     }
 
     private fun onTakeSnapshot(result: MethodChannel.Result) {
-        sceneView.planeRenderer.isVisible = false
+        CoroutineScope(Dispatchers.Default).launch {
+            try {
+                val image: Image? = sceneView.frame?.acquireCameraImage()
+                if (image != null) {
+                    val bitmap = SnapshotUtils.convertYUVToBitmap(image)
+                    image.close()
 
-        // Creation of snapshot is delayed so we ensure that the plane has been hidden
-        sceneView.postDelayed(20) {
-            SnapshotUtils.pixelCopyBitmap(sceneView as SurfaceView) { bitmap ->
-                if (bitmap != null) {
-                    CoroutineScope(Dispatchers.Default).launch {
-                        val byteArray = SnapshotUtils.bitmapToByteArray(bitmap)
+                    val portraitBitmap =
+                        SnapshotUtils.rotateToPortrait(bitmap)
+                    val scaledBitmap =
+                        SnapshotUtils.scaleBitmap(portraitBitmap, sceneView.width, sceneView.height)
+                    val byteArray = SnapshotUtils.bitmapToByteArray(scaledBitmap)
 
-                        withContext(Dispatchers.Main) {
-                            sceneView.planeRenderer.isVisible = true
-                            result.success(byteArray)
-                        }
-                    }
+                    result.success(byteArray)
                 } else {
-                    result.error("FAILED_SNAPSHOT_ERROR", "PixelCopy failed to create snapshot", null)
+                    withContext(Dispatchers.Main) {
+                        result.error("FAILED_SNAPSHOT_ERROR", "Image was null", null)
+                    }
                 }
+            } catch (e: Exception) {
+                result.error("FAILED_SNAPSHOT_ERROR", e.message ?: "Unknown error", null)
             }
         }
     }
