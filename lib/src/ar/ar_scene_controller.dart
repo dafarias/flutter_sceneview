@@ -42,6 +42,13 @@ class ARSceneController {
     _initialized = true;
   }
 
+
+  // TODO: Add node, and addNodeWithTransform. One uses the hit test
+  // to place the node, and the other uses the provided transformation
+  // Add transform node as well
+
+
+
   //TODO: Maybe its better to return null if the node is empty or if an exception
   // occurs, rather than returning an empty node
   Future<Node> addNode({

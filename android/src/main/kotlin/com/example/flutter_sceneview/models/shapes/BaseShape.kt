@@ -8,12 +8,14 @@ abstract class BaseShape {
 
     abstract val shapeType: Shapes
 
-    abstract fun build(engine: Engine, material: MaterialInstance?): Node
+    abstract fun toNode(engine: Engine, material: MaterialInstance?): Node
 
     abstract fun toMap(): Map<String, Any?>
 
+    abstract override fun toString(): String
+
     companion object {
-        fun fromMap(map: Map<String, Any?>): BaseShape? {
+        fun fromMap(map: Map<*, *>): BaseShape? {
             val shapeType = map["shapeType"] as? String ?: return null
             return when (Shapes.valueOf(shapeType.uppercase())) {
                 Shapes.SPHERE -> Sphere.fromMap(map)

@@ -75,7 +75,7 @@ class _UltralyticsIntegrationState extends State<UltralyticsIntegration> {
         throw Exception('No hole found');
       }
 
-      final holePosition = holeWorldPositions.first.pose.translation;
+      final holePosition = holeWorldPositions.first.pose.position;
 
       await _placeArFlag(detectedHolePosition);
       await _placeArRings(holePosition);
@@ -112,7 +112,7 @@ class _UltralyticsIntegrationState extends State<UltralyticsIntegration> {
     required double radius,
   }) async {
     final material = BaseMaterial(color: Color.fromARGB(255, 255, 255, 255));
-    final node = Node(position: worldPosition);
+    final node = Node(position: worldPosition,);
     final torus = Torus(
       node,
       material: material,
@@ -139,7 +139,7 @@ class _UltralyticsIntegrationState extends State<UltralyticsIntegration> {
         continue;
       }
 
-      final ballWorldPosition = worldPositions.first.pose.translation;
+      final ballWorldPosition = worldPositions.first.pose.position;
       final ballRot = worldPositions.first.pose.rotation;
       final ballWorldRotation = ballRot;
 

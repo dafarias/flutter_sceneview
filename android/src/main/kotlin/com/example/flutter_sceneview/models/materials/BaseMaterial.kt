@@ -1,44 +1,85 @@
 package com.example.flutter_sceneview.models.materials
 
 import android.graphics.Color
+import android.util.Log
 import androidx.annotation.ColorInt
-import androidx.annotation.IntRange
-import kotlin.text.get
+import androidx.annotation.FloatRange
+import io.github.sceneview.material.kMaterialDefaultMetallic
+import io.github.sceneview.material.kMaterialDefaultReflectance
+import io.github.sceneview.material.kMaterialDefaultRoughness
+import kotlin.math.roundToInt
 
 
-//TODO: Create model classes as any other class. If needed to create using a map argument
-// then add the methods to map / from map.
-class BaseMaterial(materialProps: Map<String, *>) {
+class BaseMaterial(
+    @ColorInt var color: Int = DEFAULT_COLOR,
 
-    private val argb: ArrayList<Int>? = materialProps["color"] as? ArrayList<Int>
-    @field:ColorInt
-    var color: Int = getIntColor(argb) ?: DEFAULT_COLOR
+    @FloatRange(from = 0.0, to = 1.0) var metallic: Float = DEFAULT_METALLIC,
 
-    @field:IntRange(from = 0, to = 100)
-    var metallic: Int = materialProps["metallic"] as? Int ?: DEFAULT_METALLIC
+    @FloatRange(from = 0.0, to = 1.0) var roughness: Float = DEFAULT_ROUGHNESS,
 
-    @field:IntRange(from = 0, to = 100)
-    var roughness: Int = materialProps["roughness"] as? Int ?: DEFAULT_ROUGHNESS
+    @FloatRange(from = 0.0, to = 1.0) var reflectance: Float = DEFAULT_REFLECTANCE,
 
-    @field:IntRange(from = 0, to = 100)
-    var reflectance: Int = materialProps["reflectance"] as? Int ?: DEFAULT_REFLECTANCE
-
-    val textureBytes: ByteArray? = materialProps["textureBytes"] as? ByteArray
+    val textureBytes: ByteArray? = null
+) {
 
     companion object {
         private const val DEFAULT_COLOR = Color.WHITE
-        private const val DEFAULT_METALLIC = 0
-        private const val DEFAULT_ROUGHNESS = 40
-        private const val DEFAULT_REFLECTANCE = 50
+        private const val DEFAULT_METALLIC = kMaterialDefaultMetallic
+        private const val DEFAULT_ROUGHNESS = kMaterialDefaultRoughness
+        private const val DEFAULT_REFLECTANCE = kMaterialDefaultReflectance
 
-        val DEFAULT = BaseMaterial(HashMap<String, Any>())
+        val DEFAULT = BaseMaterial()
 
-    }
+        fun fromMap(map: Map<*, *>): BaseMaterial? {
+            try {
+                val color = getIntColor(map["color"] as? List<*>) ?: DEFAULT_COLOR
+                val metallic =
+                    (map["metallic"] as? Number)?.toFloat()?.coerceIn(0f, 1f) ?: DEFAULT_METALLIC
+                val roughness =
+                    (map["roughness"] as? Number)?.toFloat()?.coerceIn(0f, 1f) ?: DEFAULT_ROUGHNESS
+                val reflectance = (map["reflectance"] as? Number)?.toFloat()?.coerceIn(0f, 1f)
+                    ?: DEFAULT_REFLECTANCE
+                val textureBytes = map["textureBytes"] as? ByteArray
 
-    private fun getIntColor(argb: ArrayList<Int>?): Int? {
-        if (argb != null) {
-            return Color.argb(argb[0], argb[1], argb[2], argb[3])
+                return BaseMaterial(
+                    color = color,
+                    metallic = metallic,
+                    roughness = roughness,
+                    reflectance = reflectance,
+                    textureBytes = textureBytes
+                )
+            } catch (e: Exception) {
+                Log.e(
+                    "BaseMaterial",
+                    "Failed to deserialize json object into BaseMaterial: ${e.message}"
+                )
+                return null
+            }
         }
-        return null
+
+
+        private fun getIntColor(color: List<*>?): Int? {
+            if (color != null && color.size == 4) {
+                val argb = color.mapNotNull { (it as? Number)?.toFloat() }
+                val a = (argb[0] * 255).roundToInt()
+                val r = (argb[1] * 255).roundToInt()
+                val g = (argb[2] * 255).roundToInt()
+                val b = (argb[3] * 255).roundToInt()
+                return Color.argb(a, r, g, b)
+            }
+            return null
+        }
+
     }
+
+    fun toMap(): Map<String, Any?> = mapOf(
+        "color" to listOf(
+            Color.alpha(color), Color.red(color), Color.green(color), Color.blue(color)
+        ),
+        "metallic" to metallic,
+        "roughness" to roughness,
+        "reflectance" to reflectance,
+        "textureBytes" to textureBytes
+    )
+
 }

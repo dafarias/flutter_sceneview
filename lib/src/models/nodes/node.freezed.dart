@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$Node implements DiagnosticableTreeMixin {
 
- String get nodeId; double get scale;@Vector3Converter() Vector3 get position;@Vector4Converter() Vector4? get rotation;
+ String get nodeId;@Vector3Converter() Vector3 get position;@Vector3Converter() Vector3? get rotation;@Vector3Converter() Vector3? get scale;
 /// Create a copy of Node
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -29,21 +29,21 @@ $NodeCopyWith<Node> get copyWith => _$NodeCopyWithImpl<Node>(this as Node, _$ide
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
   properties
     ..add(DiagnosticsProperty('type', 'Node'))
-    ..add(DiagnosticsProperty('nodeId', nodeId))..add(DiagnosticsProperty('scale', scale))..add(DiagnosticsProperty('position', position))..add(DiagnosticsProperty('rotation', rotation));
+    ..add(DiagnosticsProperty('nodeId', nodeId))..add(DiagnosticsProperty('position', position))..add(DiagnosticsProperty('rotation', rotation))..add(DiagnosticsProperty('scale', scale));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is Node&&(identical(other.nodeId, nodeId) || other.nodeId == nodeId)&&(identical(other.scale, scale) || other.scale == scale)&&(identical(other.position, position) || other.position == position)&&(identical(other.rotation, rotation) || other.rotation == rotation));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is Node&&(identical(other.nodeId, nodeId) || other.nodeId == nodeId)&&(identical(other.position, position) || other.position == position)&&(identical(other.rotation, rotation) || other.rotation == rotation)&&(identical(other.scale, scale) || other.scale == scale));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,nodeId,scale,position,rotation);
+int get hashCode => Object.hash(runtimeType,nodeId,position,rotation,scale);
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'Node(nodeId: $nodeId, scale: $scale, position: $position, rotation: $rotation)';
+  return 'Node(nodeId: $nodeId, position: $position, rotation: $rotation, scale: $scale)';
 }
 
 
@@ -54,7 +54,7 @@ abstract mixin class $NodeCopyWith<$Res>  {
   factory $NodeCopyWith(Node value, $Res Function(Node) _then) = _$NodeCopyWithImpl;
 @useResult
 $Res call({
- String nodeId, double scale,@Vector3Converter() Vector3 position,@Vector4Converter() Vector4? rotation
+ String nodeId,@Vector3Converter() Vector3 position,@Vector3Converter() Vector3? rotation,@Vector3Converter() Vector3? scale
 });
 
 
@@ -71,13 +71,13 @@ class _$NodeCopyWithImpl<$Res>
 
 /// Create a copy of Node
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? nodeId = null,Object? scale = null,Object? position = null,Object? rotation = freezed,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? nodeId = null,Object? position = null,Object? rotation = freezed,Object? scale = freezed,}) {
   return _then(_self.copyWith(
 nodeId: null == nodeId ? _self.nodeId : nodeId // ignore: cast_nullable_to_non_nullable
-as String,scale: null == scale ? _self.scale : scale // ignore: cast_nullable_to_non_nullable
-as double,position: null == position ? _self.position : position // ignore: cast_nullable_to_non_nullable
+as String,position: null == position ? _self.position : position // ignore: cast_nullable_to_non_nullable
 as Vector3,rotation: freezed == rotation ? _self.rotation : rotation // ignore: cast_nullable_to_non_nullable
-as Vector4?,
+as Vector3?,scale: freezed == scale ? _self.scale : scale // ignore: cast_nullable_to_non_nullable
+as Vector3?,
   ));
 }
 
@@ -162,10 +162,10 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String nodeId,  double scale, @Vector3Converter()  Vector3 position, @Vector4Converter()  Vector4? rotation)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String nodeId, @Vector3Converter()  Vector3 position, @Vector3Converter()  Vector3? rotation, @Vector3Converter()  Vector3? scale)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _Node() when $default != null:
-return $default(_that.nodeId,_that.scale,_that.position,_that.rotation);case _:
+return $default(_that.nodeId,_that.position,_that.rotation,_that.scale);case _:
   return orElse();
 
 }
@@ -183,10 +183,10 @@ return $default(_that.nodeId,_that.scale,_that.position,_that.rotation);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String nodeId,  double scale, @Vector3Converter()  Vector3 position, @Vector4Converter()  Vector4? rotation)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String nodeId, @Vector3Converter()  Vector3 position, @Vector3Converter()  Vector3? rotation, @Vector3Converter()  Vector3? scale)  $default,) {final _that = this;
 switch (_that) {
 case _Node():
-return $default(_that.nodeId,_that.scale,_that.position,_that.rotation);case _:
+return $default(_that.nodeId,_that.position,_that.rotation,_that.scale);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -203,10 +203,10 @@ return $default(_that.nodeId,_that.scale,_that.position,_that.rotation);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String nodeId,  double scale, @Vector3Converter()  Vector3 position, @Vector4Converter()  Vector4? rotation)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String nodeId, @Vector3Converter()  Vector3 position, @Vector3Converter()  Vector3? rotation, @Vector3Converter()  Vector3? scale)?  $default,) {final _that = this;
 switch (_that) {
 case _Node() when $default != null:
-return $default(_that.nodeId,_that.scale,_that.position,_that.rotation);case _:
+return $default(_that.nodeId,_that.position,_that.rotation,_that.scale);case _:
   return null;
 
 }
@@ -218,13 +218,13 @@ return $default(_that.nodeId,_that.scale,_that.position,_that.rotation);case _:
 
 @JsonSerializable(explicitToJson: true)
 class _Node extends Node with DiagnosticableTreeMixin {
-  const _Node({this.nodeId = "", this.scale = 0.1, @Vector3Converter() required this.position, @Vector4Converter() this.rotation}): super._();
+  const _Node({this.nodeId = "", @Vector3Converter() required this.position, @Vector3Converter() this.rotation, @Vector3Converter() this.scale}): super._();
   factory _Node.fromJson(Map<String, dynamic> json) => _$NodeFromJson(json);
 
 @override@JsonKey() final  String nodeId;
-@override@JsonKey() final  double scale;
 @override@Vector3Converter() final  Vector3 position;
-@override@Vector4Converter() final  Vector4? rotation;
+@override@Vector3Converter() final  Vector3? rotation;
+@override@Vector3Converter() final  Vector3? scale;
 
 /// Create a copy of Node
 /// with the given fields replaced by the non-null parameter values.
@@ -240,21 +240,21 @@ Map<String, dynamic> toJson() {
 void debugFillProperties(DiagnosticPropertiesBuilder properties) {
   properties
     ..add(DiagnosticsProperty('type', 'Node'))
-    ..add(DiagnosticsProperty('nodeId', nodeId))..add(DiagnosticsProperty('scale', scale))..add(DiagnosticsProperty('position', position))..add(DiagnosticsProperty('rotation', rotation));
+    ..add(DiagnosticsProperty('nodeId', nodeId))..add(DiagnosticsProperty('position', position))..add(DiagnosticsProperty('rotation', rotation))..add(DiagnosticsProperty('scale', scale));
 }
 
 @override
 bool operator ==(Object other) {
-  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Node&&(identical(other.nodeId, nodeId) || other.nodeId == nodeId)&&(identical(other.scale, scale) || other.scale == scale)&&(identical(other.position, position) || other.position == position)&&(identical(other.rotation, rotation) || other.rotation == rotation));
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is _Node&&(identical(other.nodeId, nodeId) || other.nodeId == nodeId)&&(identical(other.position, position) || other.position == position)&&(identical(other.rotation, rotation) || other.rotation == rotation)&&(identical(other.scale, scale) || other.scale == scale));
 }
 
 @JsonKey(includeFromJson: false, includeToJson: false)
 @override
-int get hashCode => Object.hash(runtimeType,nodeId,scale,position,rotation);
+int get hashCode => Object.hash(runtimeType,nodeId,position,rotation,scale);
 
 @override
 String toString({ DiagnosticLevel minLevel = DiagnosticLevel.info }) {
-  return 'Node(nodeId: $nodeId, scale: $scale, position: $position, rotation: $rotation)';
+  return 'Node(nodeId: $nodeId, position: $position, rotation: $rotation, scale: $scale)';
 }
 
 
@@ -265,7 +265,7 @@ abstract mixin class _$NodeCopyWith<$Res> implements $NodeCopyWith<$Res> {
   factory _$NodeCopyWith(_Node value, $Res Function(_Node) _then) = __$NodeCopyWithImpl;
 @override @useResult
 $Res call({
- String nodeId, double scale,@Vector3Converter() Vector3 position,@Vector4Converter() Vector4? rotation
+ String nodeId,@Vector3Converter() Vector3 position,@Vector3Converter() Vector3? rotation,@Vector3Converter() Vector3? scale
 });
 
 
@@ -282,13 +282,13 @@ class __$NodeCopyWithImpl<$Res>
 
 /// Create a copy of Node
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? nodeId = null,Object? scale = null,Object? position = null,Object? rotation = freezed,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? nodeId = null,Object? position = null,Object? rotation = freezed,Object? scale = freezed,}) {
   return _then(_Node(
 nodeId: null == nodeId ? _self.nodeId : nodeId // ignore: cast_nullable_to_non_nullable
-as String,scale: null == scale ? _self.scale : scale // ignore: cast_nullable_to_non_nullable
-as double,position: null == position ? _self.position : position // ignore: cast_nullable_to_non_nullable
+as String,position: null == position ? _self.position : position // ignore: cast_nullable_to_non_nullable
 as Vector3,rotation: freezed == rotation ? _self.rotation : rotation // ignore: cast_nullable_to_non_nullable
-as Vector4?,
+as Vector3?,scale: freezed == scale ? _self.scale : scale // ignore: cast_nullable_to_non_nullable
+as Vector3?,
   ));
 }
 

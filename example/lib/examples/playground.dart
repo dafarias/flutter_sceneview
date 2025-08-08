@@ -105,10 +105,21 @@ class _PlaygroundState extends State<Playground> {
     }
   }
 
-  void placeShapeNode(Vector3 position, Vector4 rotation) async {
-    final node = Node(position: position, rotation: rotation);
+  void placeShapeNode(Vector3 position, Vector3 rotation) async {
+    final node = Node(
+      position: position,
+      rotation: rotation,
+    );
     final material = BaseMaterial(color: Color.fromARGB(255, 255, 255, 255));
+
+    // The shape should not depend on the node to be created
     final sphere = Sphere(node, material: material, radius: 0.05);
+    final torus = Torus(
+      node,
+      material: material,
+      majorRadius: 2,
+      minorRadius: 0.05,
+    );
     final sphereNode = await _flutterSceneviewPlugin.addShapeNode(sphere);
 
     if (sphereNode != null) {
@@ -133,7 +144,7 @@ class _PlaygroundState extends State<Playground> {
     }
 
     final hitTestResult = results.first.pose;
-    placeShapeNode(hitTestResult.translation, hitTestResult.rotation);
+    placeShapeNode(hitTestResult.position, hitTestResult.rotation);
   }
 
   void goToScene() {
@@ -143,7 +154,6 @@ class _PlaygroundState extends State<Playground> {
     );
   }
 }
-
 
 /// In case we need to test the life cycle events we can just create
 /// a scene widget on a new page and then detect the changes based on the
