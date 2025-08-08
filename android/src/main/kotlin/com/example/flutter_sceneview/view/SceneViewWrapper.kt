@@ -154,7 +154,7 @@ class SceneViewWrapper(
     fun onAddNode(call: MethodCall, result: MethodChannel.Result) {
         try {
             Log.i(TAG, "addNode")
-            val args = call.arguments as? Map<String, *>
+            val args = call.arguments as? Map<*, *>
             if (args == null) {
                 result.error(
                     "INVALID_ARGUMENTS",

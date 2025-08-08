@@ -31,9 +31,7 @@ import androidx.core.graphics.createBitmap
 import com.example.flutter_sceneview.models.materials.BaseMaterial
 import com.example.flutter_sceneview.models.shapes.BaseShape
 import io.github.sceneview.ar.arcore.position
-import io.github.sceneview.ar.arcore.quaternion
 import io.github.sceneview.ar.arcore.rotation
-import io.github.sceneview.math.toRotation
 import io.github.sceneview.node.ImageNode
 
 class ARController(
@@ -106,7 +104,7 @@ class ARController(
     //todo
     // Should return anchored node related info to be able to remove the node, clone it or
     // to perform operations on it
-    suspend fun addNode(args: Map<String, *>): NodeResult {
+    suspend fun addNode(args: Map<*, *>): NodeResult {
         var failureMessage = ""
 
         if (sceneView.cameraNode.trackingState != TrackingState.TRACKING) {
@@ -116,7 +114,7 @@ class ARController(
         }
 
         val fileName = args["fileName"] as? String ?: defaultModelSrc
-        val testPlacement = args["test"] as? Boolean ?: false
+        val testPlacement = args["test"] as? Boolean == true
         val x = (args["x"] as? Double)?.toFloat()
         val y = (args["y"] as? Double)?.toFloat()
 
@@ -131,7 +129,7 @@ class ARController(
         } else {
             // Send render info with the initialization of the scene, if it changes
             // then send it as an optional parameter
-            val renderInfoMap = args["renderInfo"] as? Map<String, *>
+            val renderInfoMap = args["renderInfo"] as? Map<*, *>
 
             if (x == null || y == null || renderInfoMap == null) {
                 failureMessage = "Missing x/y or renderInfo for node placement."
@@ -250,13 +248,13 @@ class ARController(
             return NodeResult.Placed(nodeInfo)
 
         } catch (e: Exception) {
-            return NodeResult.Failed("Could not place shape node")
+            return NodeResult.Failed("Could not place shape node: ${e.cause}")
         }
 
     }
 
     //todo: Return success on node removal
-    fun removeNode(nodeId: String): Unit { //NodeResult
+    fun removeNode(nodeId: String) { //NodeResult
         try {
             val targetNode = sceneView.childNodes.firstOrNull { it.name == nodeId }
             if (targetNode != null) {
@@ -271,7 +269,7 @@ class ARController(
         }
     }
 
-    fun removeAllNodes(): Unit {
+    fun removeAllNodes() {
         try {
             sceneView.childNodes.forEach { node ->
                 sceneView.removeChildNode(node)
@@ -453,7 +451,7 @@ class ARController(
     }
 
 
-    fun transfomNode(node: Node?) {
+    fun transformNode(node: Node?) {
         try {
             node?.transform(
                 Transform(
@@ -503,8 +501,8 @@ class ARController(
                 return localFile.toURI().toString()
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to load 3d asset $fileName: ${e.message}")
-            return default;
+            Log.e(TAG, "Failed to load 3d asset $fileName: ${e.cause}")
+            return default
         }
     }
 
@@ -528,6 +526,7 @@ class ARController(
             typefaceAsset = try {
                 Typeface.createFromAsset(context.assets, fontPathInApk)
             } catch (e: Exception) {
+                Log.e(TAG, "Failed to load font family or typeface: ${e.cause}")
                 Typeface.DEFAULT // fallback if font fails to load
             }
         }

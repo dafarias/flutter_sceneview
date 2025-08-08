@@ -1,11 +1,8 @@
 package com.example.flutter_sceneview.models.shapes
 
 import android.util.Log
-import com.example.flutter_sceneview.models.shapes.Cube.Companion.DEFAULT_CENTER
-import com.example.flutter_sceneview.models.shapes.Cube.Companion.DEFAULT_SIZE
 import com.google.android.filament.Engine
 import com.google.android.filament.MaterialInstance
-import dev.romainguy.kotlin.math.Float3
 import io.github.sceneview.geometries.Geometry
 import io.github.sceneview.node.GeometryNode
 import io.github.sceneview.node.Node

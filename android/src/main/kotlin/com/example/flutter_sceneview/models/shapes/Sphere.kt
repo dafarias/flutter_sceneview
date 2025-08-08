@@ -1,8 +1,6 @@
 package com.example.flutter_sceneview.models.shapes
 
 import android.util.Log
-import com.example.flutter_sceneview.models.shapes.Torus.Companion.DEFAULT_MAJOR_RADIUS
-import com.example.flutter_sceneview.models.shapes.Torus.Companion.DEFAULT_MINOR_RADIUS
 import com.google.android.filament.Engine
 import com.google.android.filament.MaterialInstance
 import io.github.sceneview.node.SphereNode
