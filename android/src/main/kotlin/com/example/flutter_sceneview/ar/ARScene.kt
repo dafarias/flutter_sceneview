@@ -222,14 +222,18 @@ class ARScene(
                         SnapshotUtils.scaleBitmap(portraitBitmap, sceneView.width, sceneView.height)
                     val byteArray = SnapshotUtils.bitmapToByteArray(scaledBitmap)
 
-                    result.success(byteArray)
+                    withContext(Dispatchers.Main) {
+                        result.success(byteArray)
+                    }
                 } else {
                     withContext(Dispatchers.Main) {
                         result.error("FAILED_SNAPSHOT_ERROR", "Image was null", null)
                     }
                 }
             } catch (e: Exception) {
-                result.error("FAILED_SNAPSHOT_ERROR", e.message ?: "Unknown error", null)
+                withContext(Dispatchers.Main) {
+                    result.error("FAILED_SNAPSHOT_ERROR", e.message ?: "Unknown error", null)
+                }
             }
         }
     }
