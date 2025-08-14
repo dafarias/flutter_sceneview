@@ -67,7 +67,7 @@ final GlobalKey _arViewKey = GlobalKey();
         );
       },
       onCreatePlatformView: (params) {
-        return PlatformViewsService.initExpensiveAndroidView(
+        return PlatformViewsService.initAndroidView(
             id: params.id,
             viewType: viewType,
             layoutDirection: TextDirection.ltr,
