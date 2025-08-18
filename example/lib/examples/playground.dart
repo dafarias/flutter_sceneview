@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_sceneview/flutter_sceneview.dart';
@@ -15,6 +16,7 @@ class _PlaygroundState extends State<Playground> {
   final _flutterSceneviewPlugin = FlutterSceneview();
 
   late final ARSceneController _controller;
+  late final ARSessionController _session;
 
   final List<Node> placedNodes = [];
 
@@ -56,6 +58,7 @@ class _PlaygroundState extends State<Playground> {
         body: Center(
           child: SceneView(
             onViewCreated: (controller) => _controller = controller,
+            sessionController: (session) => _session = session,
           ),
         ),
         floatingActionButton: FloatingActionButton(
@@ -71,6 +74,7 @@ class _PlaygroundState extends State<Playground> {
             children: <Widget>[
               ElevatedButton(
                 onPressed: () {
+                      checkEvents();
                   removeById(nodeId: placedNodes.firstOrNull?.nodeId ?? "");
                 },
                 child: Text('Remove by id'),
@@ -94,9 +98,9 @@ class _PlaygroundState extends State<Playground> {
 
   void placeNode() async {
     final node = await _flutterSceneviewPlugin.addNode(
-      x: 550,
-      y: 550,
-      fileName: 'golf_flag.glb',
+      x: 200,
+      y: 600,
+      fileName: 'models/golf_flag.glb',
     );
 
     //Todo: Fix node placement and removal logic
@@ -106,10 +110,7 @@ class _PlaygroundState extends State<Playground> {
   }
 
   void placeShapeNode(Vector3 position, Vector3 rotation) async {
-    final node = Node(
-      position: position,
-      rotation: rotation,
-    );
+    final node = Node(position: position, rotation: rotation);
     final material = BaseMaterial(color: Color.fromARGB(255, 255, 255, 255));
 
     // The shape should not depend on the node to be created
@@ -152,6 +153,12 @@ class _PlaygroundState extends State<Playground> {
       context,
       MaterialPageRoute(builder: (context) => const Scene()),
     );
+  }
+
+  void checkEvents() {
+    _session.trackingEvents.listen((event) {
+      debugPrint(event.toString());
+    });
   }
 }
 

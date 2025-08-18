@@ -6,22 +6,24 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_sceneview/flutter_sceneview.dart';
 
-
 class SceneView extends StatefulWidget {
-  const SceneView({super.key, this.onViewCreated});
+  const SceneView({super.key, this.onViewCreated, this.sessionController});
 
   final Function(ARSceneController)? onViewCreated;
+  final Function(ARSessionController)? sessionController;
 
   @override
   State<SceneView> createState() => _SceneViewState();
 }
 
 class _SceneViewState extends State<SceneView> {
-
   final Completer<ARSceneController> _controller =
       Completer<ARSceneController>();
-      
-final GlobalKey _arViewKey = GlobalKey();
+
+  final Completer<ARSessionController> _sessionController =
+      Completer<ARSessionController>();
+
+  final GlobalKey _arViewKey = GlobalKey();
 
   bool _hasPermission = false;
 
@@ -86,9 +88,17 @@ final GlobalKey _arViewKey = GlobalKey();
   }
 
   Future<void> onPlatformViewCreated(int id) async {
-    final controller = await ARSceneController.init(sceneId: id, arViewKey: _arViewKey);
+    final controller = await ARSceneController.init(
+      sceneId: id,
+      arViewKey: _arViewKey,
+    );
+    final sessionController = await ARSessionController.init(sceneId: id);
+
     _controller.complete(controller);
+    _sessionController.complete(sessionController);
+
     widget.onViewCreated?.call(controller);
+    widget.sessionController?.call(sessionController);
   }
 
   @override
@@ -99,7 +109,10 @@ final GlobalKey _arViewKey = GlobalKey();
 
   Future<void> _disposeController() async {
     final ARSceneController controller = await _controller.future;
-    controller.dispose();
-  }
+    final ARSessionController sessionController =
+        await _sessionController.future;
 
+    controller.dispose();
+    sessionController.dispose();
+  }
 }
