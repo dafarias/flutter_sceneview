@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_sceneview/flutter_sceneview.dart';
@@ -59,6 +58,7 @@ class _PlaygroundState extends State<Playground> {
           child: SceneView(
             onViewCreated: (controller) => _controller = controller,
             sessionController: (session) => _session = session,
+            overlayBehavior: OverlayBehavior.showAlwaysOnTrackingChanged,
           ),
         ),
         floatingActionButton: FloatingActionButton(

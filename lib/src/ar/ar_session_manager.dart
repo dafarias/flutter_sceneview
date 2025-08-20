@@ -66,36 +66,18 @@ class ARSessionController {
   }
 
   Future<void> _onTrackingChanged(MethodCall call) async {
+    if (call.arguments == null) {
+      debugPrint("_onTrackingChanged: No arguments provided");
+      return;
+    }
     try {
-      
-      if (call.arguments == null) {
-        debugPrint("TAG _onTrackingChanged: No arguments provided");
-        return;
-      }
-
-      // Convert arguments to Map<String, dynamic>
-      //TODO: WORKS
-    // final Map<String, dynamic> map;
-    // if (call.arguments is Map) {
-    //   // Cast to Map<Object?, Object?> first, then convert keys and values
-    //   map = (call.arguments as Map).cast<String, dynamic>();
-    // } else {
-    //   debugPrint("TAG _onTrackingChanged: Arguments are not a Map");
-    //   return;
-    // }
-
-
       // Expect call.arguments to be a Map<String, dynamic> from Kotlin
       final map = Map<String, dynamic>.from(call.arguments);
-      // if (map == null) {
-      //   debugPrint("TAG _onTrackingChanged: No arguments provided");
-      //   return;
-      // }
 
       // Parse state (required)
       final stateString = map['state'] as String?;
       if (stateString == null) {
-        debugPrint("TAG _onTrackingChanged: Missing state");
+        debugPrint("_onTrackingChanged: Missing state");
         return;
       }
       final trackingState = TrackingState.fromTypeName(stateString);
@@ -113,17 +95,37 @@ class ARSessionController {
       );
       _eventStreamController.add(event);
 
-      debugPrint("TAG _onTrackingChanged: $event");
+      debugPrint("_onTrackingChanged: $event");
     } catch (e) {
-      debugPrint("TAG _onTrackingChanged error: $e");
+      debugPrint("_onTrackingChanged: Error parsing arguments - $e");
     }
   }
 
   Future<void> _onTrackingFailure(MethodCall call) async {
+    if (call.arguments == null) {
+      debugPrint("_onTrackingFailure: No arguments provided");
+      return;
+    }
     try {
-      debugPrint("TAG ${call.method}");
+      final map = Map<String, dynamic>.from(call.arguments);
+      final trackingState = TrackingState.fromTypeName(
+        map['state'] as String? ?? "",
+      );
+
+      final reasonString = map['reason'] as String?;
+      final failureReason = (reasonString) != null
+          ? TrackingFailure.fromTypeName(reasonString)
+          : null;
+
+      final event = ARTrackingEvent(
+        state: trackingState,
+        failureReason: failureReason,
+      );
+      _eventStreamController.add(event);
+
+      debugPrint("_onTrackingFailure: $event");
     } catch (e) {
-      debugPrint("TAG ${e.toString()}");
+      debugPrint("_onTrackingFailure: Error parsing arguments - $e");
     }
   }
 }

@@ -1,65 +1,96 @@
 import 'package:flutter/material.dart';
 
 class TutorialOverlay extends StatefulWidget {
-  const TutorialOverlay({super.key});
+  final bool show;
+  final String? message;
+  final VoidCallback? onDismiss;
+
+  const TutorialOverlay({
+    super.key,
+    required this.show,
+    this.message,
+    this.onDismiss,
+  });
 
   @override
-  State<StatefulWidget> createState() {
-    return _TutorialOverlayState();
-  }
+  State<TutorialOverlay> createState() => _TutorialOverlayState();
 }
 
-// const SceneView({super.key, this.onViewCreated});
-
-// final Function(ARSceneController)? onViewCreated;
-
-// @override
-// State<SceneView> createState() => _SceneViewState();
-
-class _TutorialOverlayState extends State<TutorialOverlay> {
-  bool _showTutorialOverlay = true;
+class _TutorialOverlayState extends State<TutorialOverlay>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _opacityAnimation;
 
   @override
   void initState() {
-    _showTutorialOverlay = true;
     super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+
+    _opacityAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+
+    if (!widget.show) {
+      _controller.value = 1.0; // Starts hidden if show is false
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant TutorialOverlay oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.show != oldWidget.show) {
+      if (!widget.show) {
+        _controller.forward(); // Animate exit
+      } else {
+        _controller.reverse(from: 1.0); // Instant entry, reset to visible
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return _showTutorialOverlay
-        ? Container(
-            color: Colors.black.withValues(alpha: 0.5),
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Opacity(
+          opacity: widget.show ? 1.0 : _opacityAnimation.value,
+          child: Container(
+            // Lighter overlay for AR view visibility
+            color: Colors.black87.withValues(alpha: 0.7),
             child: Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  // Replace with Lottie/Rive animation
-                  Icon(Icons.pan_tool, color: Colors.white, size: 64),
+                  Image.asset(
+                    'packages/flutter_sceneview/assets/images/ar_hand_prompt.png',
+                    width: 64,
+                    height: 64,
+                  ),
                   const SizedBox(height: 20),
-                  const Text(
-                    "Move your phone to start tracking",
-                    style: TextStyle(color: Colors.white, fontSize: 18),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 20.0),
+                    child: Text(
+                      widget.message ?? "Move your phone to start tracking",
+                      style: const TextStyle(color: Colors.white, fontSize: 18),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
                 ],
               ),
             ),
-          )
-        : _EmptyOverlay();
+          ),
+        );
+      },
+    );
   }
 }
-
-class _EmptyOverlay extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox.shrink();
-  }
-}
-
-
-// controller.methodChannel.setMethodCallHandler((call) async {
-//   if (call.method == "trackingStateChanged") {
-//     final isTracking = call.arguments as bool;
-//     controller.onTrackingStateChanged?.call(isTracking);
-//   }
-// });

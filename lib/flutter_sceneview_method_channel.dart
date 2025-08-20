@@ -24,7 +24,7 @@ class MethodChannelFlutterSceneview extends FlutterSceneviewPlatform {
   @override
   Future<bool?> hasRegisteredView() async {
     final isReady = await methodChannel.invokeMethod<bool>('isReady');
-    return isReady;
+    return isReady ?? true;
   }
 
   @override
