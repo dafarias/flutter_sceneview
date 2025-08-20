@@ -60,6 +60,7 @@ class MethodChannelFlutterSceneview extends FlutterSceneviewPlatform {
     double y = 0,
     double size = 1,
     String? fontFamily,
+    bool normalize = false,
   }) async {
     return await ARSceneController.instance.addTextNode(
       text,
@@ -67,6 +68,7 @@ class MethodChannelFlutterSceneview extends FlutterSceneviewPlatform {
       y: y,
       size: size,
       fontFamily: fontFamily,
+      normalize: normalize,
     );
   }
 
@@ -77,7 +79,9 @@ class MethodChannelFlutterSceneview extends FlutterSceneviewPlatform {
 
   @override
   Future<Uint8List> sceneSnapshot() async {
-    final imageBytes = await sceneChannel.invokeMethod<Uint8List>('takeSnapshot');
+    final imageBytes = await sceneChannel.invokeMethod<Uint8List>(
+      'takeSnapshot',
+    );
     return imageBytes ?? Uint8List.fromList([]);
   }
 }

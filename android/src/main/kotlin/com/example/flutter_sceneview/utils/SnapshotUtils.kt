@@ -7,13 +7,19 @@ import android.graphics.Matrix
 import android.graphics.Rect
 import android.graphics.YuvImage
 import android.media.Image
+import android.os.Handler
+import android.os.Looper
+import android.view.Choreographer
+import android.view.PixelCopy
+import android.view.SurfaceView
 import java.io.ByteArrayOutputStream
+import androidx.core.graphics.createBitmap
 import androidx.core.graphics.scale
 
 object SnapshotUtils {
-    fun bitmapToByteArray(bitmap: Bitmap): ByteArray {
+    fun bitmapToByteArray(bitmap: Bitmap, bitmapQuality: Int = 100): ByteArray {
         val outputStream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+        bitmap.compress(Bitmap.CompressFormat.PNG, bitmapQuality, outputStream)
         return outputStream.toByteArray()
     }
 
