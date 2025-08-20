@@ -1,4 +1,4 @@
-package com.example.flutter_sceneview.controller
+package com.example.flutter_sceneview.controllers
 
 import android.content.Context
 import android.graphics.*
@@ -6,8 +6,8 @@ import com.example.flutter_sceneview.models.nodes.*
 import com.example.flutter_sceneview.FlutterSceneviewPlugin
 import android.util.Log
 import com.example.flutter_sceneview.models.render.RenderInfo
-import com.example.flutter_sceneview.result.ARResult
-import com.example.flutter_sceneview.result.NodeResult
+import com.example.flutter_sceneview.results.ARResult
+import com.example.flutter_sceneview.results.NodeResult
 import com.google.ar.core.Plane
 import com.google.ar.core.TrackingState
 import dev.romainguy.kotlin.math.Float3
@@ -224,16 +224,14 @@ class ARController(
             val position =
                 positionFromMap(positionMap) ?: return NodeResult.Failed("Invalid position")
 
-            val rotationMap =
-                args["rotation"] as? Map<*, *> ?: return NodeResult.Failed("Missing rotation")
-            val rotation =
-                positionFromMap(rotationMap) ?: return NodeResult.Failed("Invalid rotation")
-
+            val rotationMap = args["rotation"] as? Map<*, *>
+            val rotation = rotationMap?.let { positionFromMap(it) }
 
 
             shapeNode.name = UUID.randomUUID().toString()
             shapeNode.position = position
-            shapeNode.rotation = rotation
+            // assigns only if non-null
+            rotation?.let { shapeNode.rotation = it }
             // TODO // shapeNode.scale = Scale(1f, 1f, 1f)
 
             sceneView.addChildNode(shapeNode)
@@ -474,22 +472,26 @@ class ARController(
 
 
     //TODO: Move to a helper or to a util class so this class only worries about handling scene objects
-    fun getAssetPath(fileName: String? = null): String {
+    fun getAssetPath(filePath: String? = null): String {
         val default = defaultModelSrc
         val flutterAssets = FlutterSceneviewPlugin.flutterAssets ?: return ""
 
         return try {
-            if (fileName.isNullOrEmpty()) {
+            if (filePath.isNullOrEmpty()) {
                 // Load the default asset directly from plugin's assets (no copying)
                 // Just return the relative path inside the plugin assets folder
                 default
             } else {
-                val localFile = File(context.filesDir, fileName)
+                val localFile = File(context.filesDir, filePath)
+
                 if (!localFile.exists()) {
+                    localFile.parentFile?.mkdirs()
+
                     // Get Flutter asset relative path inside Flutter APK
                     // (e.g. "flutter_assets/assets/models/golf_flag.glb")
                     val flutterAssetRelativePath =
-                        flutterAssets.getAssetFilePathByName("assets/models/$fileName")
+                        flutterAssets.getAssetFilePathByName("assets/$filePath")
+
 
                     context.assets.open(flutterAssetRelativePath).use { input ->
                         FileOutputStream(localFile).use { output ->
@@ -503,10 +505,11 @@ class ARController(
 
                 // If using loadInstance, then for some reason the absolutePath doesn't work,
                 // but the URI works
+                print(localFile.toURI().toString())
                 return localFile.toURI().toString()
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Failed to load 3d asset $fileName: ${e.cause}")
+            Log.e(TAG, "Failed to load 3d asset $filePath: ${e.cause}")
             return default
         }
     }
@@ -526,7 +529,7 @@ class ARController(
         var typefaceAsset: Typeface? = null
 
         if (fontFamily != null && fontFamily.isNotEmpty()) {
-            // 🔹 Load typeface from Flutter asset
+            // Loads typeface from Flutter asset
             val fontPathInApk = flutterAssets?.getAssetFilePathByName(fontFamily)
             typefaceAsset = try {
                 Typeface.createFromAsset(context.assets, fontPathInApk)

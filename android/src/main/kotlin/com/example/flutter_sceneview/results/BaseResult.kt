@@ -1,4 +1,4 @@
-package com.example.flutter_sceneview.result
+package com.example.flutter_sceneview.results
 
 import com.example.flutter_sceneview.models.nodes.NodeInfo
 

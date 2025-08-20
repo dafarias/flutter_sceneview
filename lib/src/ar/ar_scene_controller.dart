@@ -94,9 +94,14 @@ class ARSceneController {
   }
 
   Future<Node> addShapeNode(BaseShape shape) async {
-    final shapeMap = shape.toMap();
-    final result = await _arChannel.invokeMethod('addShapeNode', shapeMap);
-    return Node.fromJson(Map<String, dynamic>.from(result));
+    try {
+      final shapeMap = shape.toMap();
+      final result = await _arChannel.invokeMethod('addShapeNode', shapeMap);
+      return Node.fromJson(Map<String, dynamic>.from(result));
+    } catch (e) {
+      debugPrint("Failed to place shape node in the AR scene: $e");
+    }
+    return Node.empty;
   }
 
   Future<Node> addTextNode(

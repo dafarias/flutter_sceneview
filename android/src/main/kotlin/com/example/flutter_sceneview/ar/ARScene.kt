@@ -96,9 +96,9 @@ class ARScene(
         color: FloatArray = floatArrayOf(0.8f, 0.35f, 0.5f)
     ) {
         val fillEntity = entityManager.create()
-        LightManager.Builder(LightManager.Type.DIRECTIONAL).color(color[0], color[1], color[2])
-            .intensity(intensity).direction(direction[0], direction[1], direction[2])
-            .build(engine, fillEntity)
+        LightManager.Builder(LightManager.Type.DIRECTIONAL).castShadows(true)
+            .color(color[0], color[1], color[2]).intensity(intensity)
+            .direction(direction[0], direction[1], direction[2]).build(engine, fillEntity)
 
         sceneView.scene.addEntity(fillEntity)
     }
@@ -108,14 +108,17 @@ class ARScene(
 
         try {
             addSunLight(
-                intensity = 30_000f,
-                color = floatArrayOf(1.0f, 0.95f, 0.85f),
-                direction = floatArrayOf(1.0f, -0.3f, -0.8f)
+                intensity = 37_000f,
+                color = floatArrayOf(1.0f, 0.96f, 0.9f),
+                direction = floatArrayOf(0.6f, -0.4f, -0.6f)
+
+
             )
 
             addFillLight(
-                intensity = 30_000f, direction = floatArrayOf(-1.0f, 0.5f, 0.8f),
-                color = floatArrayOf(1.0f, 0.95f, 0.85f),
+                intensity = 50_000f,
+                direction = floatArrayOf(-0.6f, 0.3f, 0.4f),
+                color = floatArrayOf(1.0f, 0.95f, 0.75f),
             )
 
             // 1) Load the IBL / Skybox KTX file as ByteBuffer
@@ -167,7 +170,7 @@ class ARScene(
                 }
             }
 
-            // 5) Create & assign the unified Environment
+            //5) Create & assign the unified Environment
             sceneView.environment = sceneView.environmentLoader.createEnvironment(
                 ibl,
                 skybox,
@@ -216,11 +219,10 @@ class ARScene(
                     val bitmap = SnapshotUtils.convertYUVToBitmap(image)
                     image.close()
 
-                    val portraitBitmap =
-                        SnapshotUtils.rotateToPortrait(bitmap)
-                    val scaledBitmap =
-                        SnapshotUtils.scaleBitmap(portraitBitmap, sceneView.width, sceneView.height)
-                    val byteArray = SnapshotUtils.bitmapToByteArray(scaledBitmap)
+                val portraitBitmap = SnapshotUtils.rotateToPortrait(bitmap)
+                val scaledBitmap =
+                    SnapshotUtils.scaleBitmap(portraitBitmap, sceneView.width, sceneView.height)
+                val byteArray = SnapshotUtils.bitmapToByteArray(scaledBitmap)
 
                     withContext(Dispatchers.Main) {
                         result.success(byteArray)

@@ -7,9 +7,10 @@ import android.widget.FrameLayout
 import androidx.lifecycle.Lifecycle
 import com.example.flutter_sceneview.FlutterSceneviewPlugin
 import com.example.flutter_sceneview.ar.ARScene
-import com.example.flutter_sceneview.controller.ARController
-import com.example.flutter_sceneview.result.NodeResult
-import com.example.flutter_sceneview.result.ARResult
+import com.example.flutter_sceneview.ar.SessionManager
+import com.example.flutter_sceneview.controllers.ARController
+import com.example.flutter_sceneview.results.NodeResult
+import com.example.flutter_sceneview.results.ARResult
 import com.google.ar.core.Config
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
@@ -35,6 +36,7 @@ class SceneViewWrapper(
     private val _mainScope = CoroutineScope(Dispatchers.Main)
     private val _channel = MethodChannel(messenger, "ar_view_wrapper")
     private var _controller: ARController
+    private val sessionManager: SessionManager
 
     override fun getView(): View {
 //        Log.i(TAG, "getView:")
@@ -74,11 +76,13 @@ class SceneViewWrapper(
                 onSessionCreated = { session ->
                     Log.i(TAG, "onSessionCreated")
                 }
-                onTrackingFailureChanged = { reason ->
-                    Log.i(TAG, "onTrackingFailureChanged: $reason");
-                }
+
+//                onTrackingFailureChanged = { reason ->
+//                    Log.i(TAG, "onTrackingFailureChanged: $reason");
+//                }
             }
 
+            //Wrapped Scene manager
             ARScene(sceneView, messenger, context).enableEnvironment()
 
 
@@ -100,6 +104,11 @@ class SceneViewWrapper(
             channel = _channel,
             coroutineScope = _mainScope
         )
+
+
+        // Attach SessionManager
+        sessionManager = SessionManager(sceneView, messenger)
+//        sessionManager.startMonitoring()
 
 
     }
