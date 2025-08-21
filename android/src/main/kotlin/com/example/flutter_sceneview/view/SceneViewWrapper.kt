@@ -55,7 +55,7 @@ class SceneViewWrapper(
             Log.i(TAG, "init")
             sceneView = ARSceneView(context, sharedLifecycle = lifecycle)
             sceneView.apply {
-//                 Configure AR session settings
+//              Configure AR session settings
                 sessionConfiguration = { session, config ->
                     // Enable depth if supported on the device
                     config.depthMode =

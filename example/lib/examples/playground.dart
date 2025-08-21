@@ -58,6 +58,7 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
           child: SceneView(
             onViewCreated: (controller) => _controller = controller,
             sessionController: (session) => _session = session,
+            overlayBehavior: OverlayBehavior.showAlwaysOnTrackingChanged,
           ),
         ),
         bottomSheet: Container(

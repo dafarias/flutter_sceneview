@@ -69,7 +69,6 @@ class DetectionService {
       final detectedObjects = await _yolo.predict(imageBytes);
       final detectionResult = detectedObjects.toDetectionResult(minBallConfidence: 0.1);
 
-      // TODO: remove after testing
       // saveDetectionToGallery(imageBytes, detectionResult);
 
       return detectionResult;

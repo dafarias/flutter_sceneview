@@ -386,10 +386,10 @@ class ARController(
         args: Map<*, *>,
     ) {
         val text = args["text"] as? String ?: ""
-        val nodeScale = args["scale"] as? Float3 ?: Float3()
-        val x = (args["x"] as? Double)?.toFloat()
-        val y = (args["y"] as? Double)?.toFloat()
+        var x = (args["x"] as? Double)?.toFloat()
+        var y = (args["y"] as? Double)?.toFloat()
         val fontFamily = args["fontFamily"] as? String
+        val normalize = args["normalize"] as? Boolean ?: false
 
         // The size can be a single float value of N = meters, like 0.02 , etc.
         // This size represents the width of the image / bitmap (in meters)
@@ -405,26 +405,30 @@ class ARController(
         }
         val renderInfo = RenderInfo.fromMap(renderInfoMap)
 
-        val (normalizedX, normalizedY) = normalizePoint(x, y, renderInfo) ?: run {
-            Log.e(TAG, "Normalization failed")
-            return
+        if(normalize) {
+            val (normalizedX, normalizedY) = normalizePoint(x, y, renderInfo) ?: run {
+                Log.e(TAG, "Normalization failed")
+                return
+            }
+
+            // Use normalizedX and normalizedY for  hit testing
+            val physicalX: Float = (normalizedX * sceneView.width)
+            val physicalY: Float = (normalizedY * sceneView.height)
+
+            x = physicalX
+            y = physicalY
         }
 
-        // Use normalizedX and normalizedY for  hit testing
-        val physicalX: Float = (normalizedX * sceneView.width).toFloat()
-        val physicalY: Float = (normalizedY * sceneView.height).toFloat()
-
-
         val hitResultAnchor = sceneView.hitTestAR(
-            xPx = physicalX,
-            yPx = physicalY,
+            xPx = x,
+            yPx = y,
             point = true,
             planeTypes = setOf(Plane.Type.HORIZONTAL_UPWARD_FACING, Plane.Type.VERTICAL),
         )?.createAnchorOrNull()
 
         if (hitResultAnchor == null) {
             val failureMessage =
-                "No AR surface found at screen coordinates x=$physicalX, y=$physicalX"
+                "No AR surface found at screen coordinates x=$x, y=$y"
             Log.e(TAG, failureMessage)
             return
         }
@@ -432,7 +436,8 @@ class ARController(
         val pose = hitResultAnchor.pose
         val hitPosition = Position(pose.tx(), pose.ty(), pose.tz())
 
-        val textBitmap = createTextBitmap(text, size = size, fontFamily = fontFamily)
+        val textBitmap =
+            createTextBitmap(text, size = size, fontFamily = fontFamily, textColor = textColor)
 
         // Calculate AR height maintaining aspect ratio
         val aspectRatio = textBitmap.height.toFloat() / textBitmap.width.toFloat()
@@ -528,7 +533,7 @@ class ARController(
         var typefaceAsset: Typeface? = null
 
         if (fontFamily != null && fontFamily.isNotEmpty()) {
-            // 🔹 Load typeface from Flutter asset
+            // Loads typeface from Flutter asset
             val fontPathInApk = flutterAssets?.getAssetFilePathByName(fontFamily)
             typefaceAsset = try {
                 Typeface.createFromAsset(context.assets, fontPathInApk)

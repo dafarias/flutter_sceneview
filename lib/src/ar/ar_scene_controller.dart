@@ -106,6 +106,7 @@ class ARSceneController {
     required double y,
     double size = 1,
     String? fontFamily,
+    bool normalize = false,
   }) async {
     final args = <String, dynamic>{};
     try {
@@ -117,6 +118,7 @@ class ARSceneController {
       args['y'] = y;
       args['text'] = text;
       args['size'] = size;
+      args['normalize'] = normalize;
       args['renderInfo'] = SceneUtils.renderInfo?.toJson();
 
       // Optional fontFamily

@@ -24,7 +24,7 @@ class MethodChannelFlutterSceneview extends FlutterSceneviewPlatform {
   @override
   Future<bool?> hasRegisteredView() async {
     final isReady = await methodChannel.invokeMethod<bool>('isReady');
-    return isReady;
+    return isReady ?? true;
   }
 
   @override
@@ -68,6 +68,7 @@ class MethodChannelFlutterSceneview extends FlutterSceneviewPlatform {
     double y = 0,
     double size = 1,
     String? fontFamily,
+    bool normalize = false,
   }) async {
     return await ARSceneController.instance.addTextNode(
       text,
@@ -75,6 +76,7 @@ class MethodChannelFlutterSceneview extends FlutterSceneviewPlatform {
       y: y,
       size: size,
       fontFamily: fontFamily,
+      normalize: normalize,
     );
   }
 

@@ -147,14 +147,20 @@ class _UltralyticsIntegrationScreenState extends State<UltralyticsIntegrationScr
         position: ballWorldPosition,
         rotation: ballWorldRotation,
       );
-      final material = BaseMaterial(color: Color.fromARGB(255, 255, 255, 255));
+      final material = BaseMaterial(color: Color.fromARGB(0, 0, 0, 0));
       final sphere = Sphere(node, material: material, radius: 0.025);
       await _flutterSceneviewPlugin.addShapeNode(sphere);
 
-      // TODO: addTextNode
       double distance = _calculateDistanceBetweenPoints(
         holePosition,
         ballWorldPosition,
+      );
+
+      await _flutterSceneviewPlugin.addTextNode(
+        '${distance.toStringAsFixed(2)}m',
+        x: ballPosition.dx,
+        y: ballPosition.dy,
+        size: 0.5,
       );
 
       ball.distanceToHole = distance;

@@ -60,6 +60,7 @@ abstract class FlutterSceneviewPlatform extends PlatformInterface {
     double y = 0,
     double size = 1,
     String? fontFamily,
+    bool normalize = false,
   }) {
     throw UnimplementedError('addTextNode() has not been implemented.');
   }

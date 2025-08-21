@@ -1,9 +1,12 @@
 package com.example.flutter_sceneview.ar
 
-import android.media.Image
+import android.app.Activity
 import android.content.Context
 import android.content.res.AssetManager
+import android.media.Image
 import android.util.Log
+import android.view.SurfaceView
+import androidx.core.view.postDelayed
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.example.flutter_sceneview.utils.SnapshotUtils
@@ -13,11 +16,16 @@ import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import com.google.android.filament.EntityManager
 import com.google.android.filament.LightManager
+import com.google.android.filament.Material
 import com.google.android.filament.Skybox
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -204,21 +212,31 @@ class ARScene(
     }
 
     private fun onTakeSnapshot(result: MethodChannel.Result) {
-        try {
-            val image: Image? = sceneView.frame?.acquireCameraImage()
-            if (image != null) {
-                val bitmap = SnapshotUtils.convertYUVToBitmap(image)
-                image.close()
+        CoroutineScope(Dispatchers.Default).launch {
+            try {
+                val image: Image? = sceneView.frame?.acquireCameraImage()
+                if (image != null) {
+                    val bitmap = SnapshotUtils.convertYUVToBitmap(image)
+                    image.close()
 
                 val portraitBitmap = SnapshotUtils.rotateToPortrait(bitmap)
                 val scaledBitmap =
                     SnapshotUtils.scaleBitmap(portraitBitmap, sceneView.width, sceneView.height)
                 val byteArray = SnapshotUtils.bitmapToByteArray(scaledBitmap)
 
-                result.success(byteArray)
+                    withContext(Dispatchers.Main) {
+                        result.success(byteArray)
+                    }
+                } else {
+                    withContext(Dispatchers.Main) {
+                        result.error("FAILED_SNAPSHOT_ERROR", "Image was null", null)
+                    }
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    result.error("FAILED_SNAPSHOT_ERROR", e.message ?: "Unknown error", null)
+                }
             }
-        } catch (e: Exception) {
-            result.error("FAILED_SNAPSHOT_ERROR", e.message ?: "Unknown error", null)
         }
     }
 }

@@ -6,3 +6,7 @@ export './shapes/torus.dart';
 export './materials/base_material.dart';
 
 export 'nodes/hit_test_result.dart';
+
+export 'session/session_event.dart';
+export 'session/tracking.dart';
+export 'session/overlay_behavior.dart';
