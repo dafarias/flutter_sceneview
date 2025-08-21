@@ -18,6 +18,7 @@ abstract class BaseShape {
   Map<String, dynamic> toMap() => <String, dynamic>{
     'shapeType': shapeType.toUpper,
     'material': material.value.toMap(),
+    'nodeId': node.nodeId,
     'position': {
       'x': node.position.x,
       'y': node.position.y,

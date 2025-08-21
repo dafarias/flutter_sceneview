@@ -28,11 +28,19 @@ class MethodChannelFlutterSceneview extends FlutterSceneviewPlatform {
   }
 
   @override
-  Future<Node?> addNode({double x = 0, double y = 0, String? fileName}) async {
+  Future<Node?> addNode({
+    double x = 0,
+    double y = 0,
+    String? fileName,
+    String? nodeId,
+    bool normalize = false,
+  }) async {
     return await ARSceneController.instance.addNode(
       x: x,
       y: y,
       fileName: fileName,
+      nodeId: nodeId,
+      normalize: normalize,
     );
   }
 
@@ -77,7 +85,9 @@ class MethodChannelFlutterSceneview extends FlutterSceneviewPlatform {
 
   @override
   Future<Uint8List> sceneSnapshot() async {
-    final imageBytes = await sceneChannel.invokeMethod<Uint8List>('takeSnapshot');
+    final imageBytes = await sceneChannel.invokeMethod<Uint8List>(
+      'takeSnapshot',
+    );
     return imageBytes ?? Uint8List.fromList([]);
   }
 }

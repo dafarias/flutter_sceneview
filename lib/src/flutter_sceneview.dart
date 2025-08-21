@@ -23,11 +23,19 @@ class FlutterSceneview {
     return FlutterSceneviewPlatform.instance.checkPermissions();
   }
 
-  Future<Node?> addNode({double x = 0, double y = 0, String? fileName}) {
+  Future<Node?> addNode({
+    double x = 0,
+    double y = 0,
+    String? fileName,
+    String? nodeName,
+    bool normalize = false,
+  }) {
     return FlutterSceneviewPlatform.instance.addNode(
       x: x,
       y: y,
       fileName: fileName,
+      nodeId: nodeName,
+      normalize: normalize,
     );
   }
 

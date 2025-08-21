@@ -125,9 +125,7 @@ class SceneViewWrapper(
             }
 
             "addNode" -> {
-                _mainScope.launch {
-                    onAddNode(call, result)
-                }
+                onAddNode(call, result)
                 return
             }
 
@@ -142,7 +140,12 @@ class SceneViewWrapper(
             }
 
             "removeAllNodes" -> {
-                onRemoveAllNodes(call, result)
+                onRemoveAllNodes(result)
+                return
+            }
+
+            "getAllNodes" -> {
+                onGetAllNodes(result)
                 return
             }
 
@@ -160,7 +163,7 @@ class SceneViewWrapper(
         }
     }
 
-    fun onAddNode(call: MethodCall, result: MethodChannel.Result) {
+    private fun onAddNode(call: MethodCall, result: MethodChannel.Result) {
         try {
             Log.i(TAG, "addNode")
             val args = call.arguments as? Map<*, *>
@@ -229,7 +232,7 @@ class SceneViewWrapper(
         }
     }
 
-    fun onRemoveNode(call: MethodCall, result: MethodChannel.Result) {
+    private fun onRemoveNode(call: MethodCall, result: MethodChannel.Result) {
         try {
             Log.i(TAG, "removeNode")
             val args = call.arguments as? Map<String, *>
@@ -245,17 +248,28 @@ class SceneViewWrapper(
         }
     }
 
-    fun onRemoveAllNodes(call: MethodCall, result: MethodChannel.Result) {
+    private fun onRemoveAllNodes(result: MethodChannel.Result) {
         try {
             Log.i(TAG, "removeAllNodes")
-            val node = _controller.removeAllNodes()
+            _controller.removeAllNodes()
             result.success(null)
         } catch (e: Exception) {
             result.error("REMOVE_ALL_NODES_ERROR", e.message ?: "Unknown error", null)
         }
     }
 
-    fun onHitTest(call: MethodCall, result: MethodChannel.Result) {
+    private fun onGetAllNodes(result: MethodChannel.Result) {
+        try {
+            val nodes = _controller.getAllNodes()
+            val nodesList = ArrayList(nodes.map { it.toMap() })
+
+            result.success(nodesList)
+        } catch (e: Exception) {
+            result.error("GET_ALL_NODES_ERROR", e.message ?: "Unknown error", e.stackTraceToString())
+        }
+    }
+
+    private fun onHitTest(call: MethodCall, result: MethodChannel.Result) {
         try {
             Log.i(TAG, "performHitTest")
             val args = call.arguments as? Map<*, *>
@@ -289,7 +303,7 @@ class SceneViewWrapper(
     }
 
 
-    fun onAddTextNode(call: MethodCall, result: MethodChannel.Result) {
+    private fun onAddTextNode(call: MethodCall, result: MethodChannel.Result) {
         try {
             Log.i(TAG, "performHitTest")
             val args = call.arguments as? Map<*, *>

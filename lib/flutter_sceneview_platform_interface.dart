@@ -40,7 +40,13 @@ abstract class FlutterSceneviewPlatform extends PlatformInterface {
     throw UnimplementedError('checkPermissions() has not been implemented.');
   }
 
-  Future<Node?> addNode({double x = 0, double y = 0, String? fileName}) {
+  Future<Node?> addNode({
+    double x = 0,
+    double y = 0,
+    String? fileName,
+    String? nodeId,
+    bool normalize = false,
+  }) {
     throw UnimplementedError('addNode() has not been implemented.');
   }
 
@@ -64,6 +70,10 @@ abstract class FlutterSceneviewPlatform extends PlatformInterface {
 
   Future<void> removeAllNodes() {
     throw UnimplementedError('removeAllNodes() has not been implemented.');
+  }
+
+  Future<List<Node>> getAllNodes() {
+    throw UnimplementedError("getAllNodes() has not been implemented");
   }
 
   Future<List<HitTestResult>> performHitTest(double x, double y) {

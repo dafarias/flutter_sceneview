@@ -42,12 +42,9 @@ class ARSceneController {
     _initialized = true;
   }
 
-
   // TODO: Add node, and addNodeWithTransform. One uses the hit test
   // to place the node, and the other uses the provided transformation
   // Add transform node as well
-
-
 
   //TODO: Maybe its better to return null if the node is empty or if an exception
   // occurs, rather than returning an empty node
@@ -55,7 +52,8 @@ class ARSceneController {
     double? x,
     double? y,
     String? fileName,
-    bool test = false,
+    String? nodeId,
+    bool normalize = false,
   }) async {
     final args = <String, dynamic>{};
     try {
@@ -68,14 +66,13 @@ class ARSceneController {
         return Node.empty;
       }
 
-      if (test) {
-        args['test'] = true;
-        args['fileName'] = fileName;
-      } else if (x != null && y != null) {
+      if (x != null && y != null) {
+        args['nodeId'] = nodeId;
         args['fileName'] = fileName;
         args['x'] = x;
         args['y'] = y;
         args['renderInfo'] = info.toJson();
+        args['normalize'] = normalize;
       } else {
         throw MissingPositionException(
           'Missing RenderInfo or invalid x/y coordinates',
@@ -104,8 +101,7 @@ class ARSceneController {
     return Node.empty;
   }
 
-  Future<Node> addTextNode(
-    String text, {
+  Future<Node> addTextNode(String text, {
     required double x,
     required double y,
     double size = 1,
@@ -158,6 +154,21 @@ class ARSceneController {
     }
   }
 
+  Future<List<Node>> getAllNodes() async {
+    try {
+      final nodesRaw = await _arChannel.invokeMethod<List<dynamic>>(
+        'getAllNodes',
+      );
+
+      final nodes = nodesRaw?.map((item) =>
+          Node.fromJson(Map<String, dynamic>.from(item))).toList() ?? [];
+      return nodes;
+    } catch (e) {
+      debugPrint(e.toString());
+      return [];
+    }
+  }
+
   Future<List<HitTestResult>> hitTest({
     required double x,
     required double y,
@@ -172,7 +183,7 @@ class ARSceneController {
           hitTestResultRaw
               ?.map((item) => HitTestResult.fromMap(item))
               .toList() ??
-          [];
+              [];
       return hitTestResult;
     } catch (e) {
       debugPrint(e.toString());
