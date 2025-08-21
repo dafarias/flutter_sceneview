@@ -1,9 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_sceneview_example/examples/playground.dart';
-import 'package:flutter_sceneview_example/examples/ultralytics_integration/ultralytics_integration.dart';
+import 'package:flutter_sceneview_example/utils/app_router.dart';
 
-// TODO: add a main screen here, so the user can choose from available examples
 void main() {
-  // runApp(const MaterialApp(home: Playground()));
-  runApp(const UltralyticsIntegration());
+  runApp(const FlutterSceneviewExampleApp());
 }
+
+class FlutterSceneviewExampleApp extends StatelessWidget {
+  const FlutterSceneviewExampleApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Flutter Sceneview Example App',
+      debugShowCheckedModeBanner: false,
+      onGenerateRoute: AppRouter.build,
+      initialRoute: '/',
+    );
+  }
+}
+

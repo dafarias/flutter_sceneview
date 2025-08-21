@@ -5,14 +5,14 @@ import 'package:flutter_sceneview_example/examples/ultralytics_integration/detec
 import 'package:flutter_sceneview_example/examples/ultralytics_integration/detection_service.dart';
 import 'package:vector_math/vector_math_64.dart' hide Colors, Sphere;
 
-class UltralyticsIntegration extends StatefulWidget {
-  const UltralyticsIntegration({super.key});
+class UltralyticsIntegrationScreen extends StatefulWidget {
+  const UltralyticsIntegrationScreen({super.key});
 
   @override
-  State<UltralyticsIntegration> createState() => _UltralyticsIntegrationState();
+  State<UltralyticsIntegrationScreen> createState() => _UltralyticsIntegrationScreenState();
 }
 
-class _UltralyticsIntegrationState extends State<UltralyticsIntegration> {
+class _UltralyticsIntegrationScreenState extends State<UltralyticsIntegrationScreen> {
   DetectionService? _detectionService;
 
   final _flutterSceneviewPlugin = FlutterSceneview();

@@ -35,7 +35,13 @@ class MockFlutterSceneviewPlatform
   }
 
   @override
-  Future<Node> addNode({double x = 0, double y = 0, String? fileName}) {
+  Future<Node> addNode({
+    double x = 0,
+    double y = 0,
+    String? fileName,
+    String? nodeId,
+    bool normalize = false,
+  }) {
     // TODO: implement addNode
     throw UnimplementedError();
   }
@@ -80,6 +86,12 @@ class MockFlutterSceneviewPlatform
     bool normalize = false,
   }) {
     // TODO: implement addTextNode
+    throw UnimplementedError();
+  }
+
+  @override
+  Future<List<Node>> getAllNodes() {
+    // TODO: implement getAllNodes
     throw UnimplementedError();
   }
 }

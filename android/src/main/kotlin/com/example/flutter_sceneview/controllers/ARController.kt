@@ -105,7 +105,7 @@ class ARController(
     // Should return anchored node related info to be able to remove the node, clone it or
     // to perform operations on it
     suspend fun addNode(args: Map<*, *>): NodeResult {
-        var failureMessage = ""
+        var failureMessage: String
 
         if (sceneView.cameraNode.trackingState != TrackingState.TRACKING) {
             failureMessage = "Camera not tracking — can't perform hit test yet."
@@ -113,53 +113,47 @@ class ARController(
             return NodeResult.Failed(failureMessage)
         }
 
+        val nodeId = args["nodeId"] as? String ?: UUID.randomUUID().toString()
         val fileName = args["fileName"] as? String ?: defaultModelSrc
-        val testPlacement = args["test"] as? Boolean == true
+        val normalize = args["normalize"] as? Boolean ?: false
         val x = (args["x"] as? Double)?.toFloat()
         val y = (args["y"] as? Double)?.toFloat()
 
-        val physicalX: Float
-        val physicalY: Float
+        // Send render info with the initialization of the scene, if it changes
+        // then send it as an optional parameter
+        val renderInfoMap = args["renderInfo"] as? Map<*, *>
 
-        if (testPlacement) {
-            // Place at center of scene view
-            physicalX = sceneView.width / 2f
-            physicalY = sceneView.height / 2f
-            Log.i(TAG, "Placing node at scene center x=$physicalX, y=$physicalY")
-        } else {
-            // Send render info with the initialization of the scene, if it changes
-            // then send it as an optional parameter
-            val renderInfoMap = args["renderInfo"] as? Map<*, *>
+        if (x == null || y == null || renderInfoMap == null) {
+            failureMessage = "Missing x/y or renderInfo for node placement."
+            Log.e(TAG, failureMessage)
+            return NodeResult.Failed(failureMessage)
+        }
 
-            if (x == null || y == null || renderInfoMap == null) {
-                failureMessage = "Missing x/y or renderInfo for node placement."
-                Log.e(TAG, failureMessage)
-                return NodeResult.Failed(failureMessage)
-            }
-            val renderInfo = RenderInfo.fromMap(renderInfoMap)
+        val renderInfo = RenderInfo.fromMap(renderInfoMap)
 
-            val (normalizedX, normalizedY) = normalizePoint(x, y, renderInfo) ?: run {
+        val (finalX, finalY) = if (normalize) {
+            normalizePoint(
+                x,
+                y,
+                renderInfo
+            )?.let { (nx, ny) -> nx * sceneView.width to ny * sceneView.height } ?: run {
                 failureMessage = "Normalization failed"
                 Log.e(TAG, failureMessage)
                 return NodeResult.Failed(failureMessage)
             }
-
-            // Use normalizedX and normalizedY for  hit testing
-            physicalX = (normalizedX * sceneView.width).toFloat()
-            physicalY = (normalizedY * sceneView.height).toFloat()
+        } else {
+            x to y
         }
 
         Log.d(
             TAG,
             "SceneView size = ${sceneView.width} x ${sceneView.height}, normalized hit at x=$x y=$y"
         )
-        Log.d(TAG, "Transformed coordinates x:$physicalX, y:$physicalY")
+        Log.d(TAG, "Transformed coordinates x:$finalX, y:$finalY")
 
-        // TODO: add parameter to make normalization appliance optional
-        // currently, x & y is passed raw without normalization
         val hitResultAnchor = sceneView.hitTestAR(
-            xPx = x!!,
-            yPx = y!!,
+            xPx = finalX,
+            yPx = finalY,
             point = true,
             planeTypes = setOf(Plane.Type.HORIZONTAL_UPWARD_FACING, Plane.Type.VERTICAL),
         )?.createAnchorOrNull()
@@ -185,13 +179,12 @@ class ARController(
                 scaleToUnits = 0.5f,
             )
             node.position = hitPosition
-            node.name = UUID.randomUUID().toString()
+            node.name = nodeId
             sceneView.addChildNode(node)
 
-            Log.i(TAG, "Node $node.name placed successfully")
-            //todo: node.scale is a vector, not a simple float
+            Log.i(TAG, "Node \"${node.name}\" placed successfully")
             val nodeInfo = NodeInfo(
-                nodeId = node.name ?: "",
+                nodeId = node.name ?: "Unknown",
                 position = hitPosition,
                 rotation = hitResultAnchor.pose.rotation,
                 scale = node.scale
@@ -218,7 +211,7 @@ class ARController(
                 )
             ) ?: return NodeResult.Failed("Invalid shape")
 
-
+            val nodeId = args["nodeId"] as? String ?: UUID.randomUUID().toString()
             val positionMap =
                 args["position"] as? Map<*, *> ?: return NodeResult.Failed("Missing position")
             val position =
@@ -227,15 +220,13 @@ class ARController(
             val rotationMap = args["rotation"] as? Map<*, *>
             val rotation = rotationMap?.let { positionFromMap(it) }
 
-
-            shapeNode.name = UUID.randomUUID().toString()
+            shapeNode.name = nodeId
             shapeNode.position = position
             // assigns only if non-null
             rotation?.let { shapeNode.rotation = it }
             // TODO // shapeNode.scale = Scale(1f, 1f, 1f)
 
             sceneView.addChildNode(shapeNode)
-
 
             val nodeInfo = NodeInfo(
                 nodeId = shapeNode.name!!,
@@ -269,16 +260,29 @@ class ARController(
 
     fun removeAllNodes() {
         try {
-            sceneView.childNodes.forEach { node ->
-                sceneView.removeChildNode(node)
-            }
-            //return NodeResult.Success("All nodes removed")
+            sceneView.clearChildNodes()
         } catch (e: Exception) {
             Log.e(TAG, "Failed to remove all nodes from the scene ${e.message}")
-            //return NodeResult.Failed("Failed to remove nodes from the scene")
         }
     }
 
+    fun getAllNodes(): List<NodeInfo> {
+        try {
+            val nodes = sceneView.childNodes.map { node ->
+                NodeInfo(
+                    nodeId = node.name!!,
+                    position = node.position,
+                    rotation = node.rotation,
+                    scale = node.scale
+                )
+            }
+
+            return nodes
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to retrieve all nodes from the scene")
+            return emptyList()
+        }
+    }
 
     fun hitTest(args: Map<*, *>): ARResult {  //NodeResult
         try {

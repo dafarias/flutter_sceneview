@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_sceneview/flutter_sceneview.dart';
-import 'package:vector_math/vector_math_64.dart' hide Sphere;
+import 'package:vector_math/vector_math_64.dart' hide Sphere, Colors;
 
-class Playground extends StatefulWidget {
-  const Playground({super.key});
+class PlaygroundScreen extends StatefulWidget {
+  const PlaygroundScreen({super.key});
 
   @override
-  State<Playground> createState() => _PlaygroundState();
+  State<PlaygroundScreen> createState() => _PlaygroundScreenState();
 }
 
-class _PlaygroundState extends State<Playground> {
+class _PlaygroundScreenState extends State<PlaygroundScreen> {
   String _platformVersion = 'Unknown';
   final _flutterSceneviewPlugin = FlutterSceneview();
 
@@ -61,35 +61,64 @@ class _PlaygroundState extends State<Playground> {
             overlayBehavior: OverlayBehavior.showAlwaysOnTrackingChanged,
           ),
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            placeNode();
-          },
-          child: Icon(Icons.place),
-        ),
+        bottomSheet: Container(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final maxWidth = constraints.maxWidth;
 
-        bottomSheet: SizedBox(
-          height: 60,
-          child: Row(
-            children: <Widget>[
-              ElevatedButton(
-                onPressed: () {
-                      checkEvents();
-                  removeById(nodeId: placedNodes.firstOrNull?.nodeId ?? "");
-                },
-                child: Text('Remove by id'),
-              ),
+              const spacing = 12.0;
+              final buttonWidth = (maxWidth - (spacing * 2)) / 3;
 
-              SizedBox(width: 20),
-
-              ElevatedButton(onPressed: onRemoveAll, child: Text('Remove all')),
-              SizedBox(width: 20),
-
-              ElevatedButton(
-                onPressed: _handleHitTest,
-                child: Text('Hit test'),
-              ),
-            ],
+              return Wrap(
+                spacing: spacing,
+                runSpacing: spacing,
+                children: [
+                  SizedBox(
+                    width: buttonWidth,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        checkEvents();
+                        removeById(nodeId: placedNodes.firstOrNull?.nodeId ?? "");
+                      },
+                      child: const Text('Remove by id'),
+                    ),
+                  ),
+                  SizedBox(
+                    width: buttonWidth,
+                    child: ElevatedButton(
+                      onPressed: onRemoveAll,
+                      child: const Text('Remove all'),
+                    ),
+                  ),
+                  SizedBox(
+                    width: buttonWidth,
+                    child: ElevatedButton(
+                      onPressed: getAllNodes,
+                      child: const Text('Get all'),
+                    ),
+                  ),
+                  SizedBox(
+                    width: buttonWidth,
+                    child: ElevatedButton(
+                      onPressed: _handleHitTest,
+                      child: const Text('Hit test'),
+                    ),
+                  ),
+                  SizedBox(
+                    width: buttonWidth,
+                    child: ElevatedButton(
+                      onPressed: placeNode,
+                      child: const Icon(Icons.flag),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -101,6 +130,7 @@ class _PlaygroundState extends State<Playground> {
       x: 200,
       y: 600,
       fileName: 'models/golf_flag.glb',
+      nodeName: 'Flag',
     );
 
     //Todo: Fix node placement and removal logic
@@ -110,17 +140,17 @@ class _PlaygroundState extends State<Playground> {
   }
 
   void placeShapeNode(Vector3 position, Vector3 rotation) async {
-    final node = Node(position: position, rotation: rotation);
+    final node = Node(position: position, rotation: rotation, nodeId: "Sphere");
     final material = BaseMaterial(color: Color.fromARGB(255, 255, 255, 255));
 
     // The shape should not depend on the node to be created
     final sphere = Sphere(node, material: material, radius: 0.05);
-    final torus = Torus(
-      node,
-      material: material,
-      majorRadius: 2,
-      minorRadius: 0.05,
-    );
+    // final torus = Torus(
+    //   node,
+    //   material: material,
+    //   majorRadius: 2,
+    //   minorRadius: 0.05,
+    // );
     final sphereNode = await _flutterSceneviewPlugin.addShapeNode(sphere);
 
     if (sphereNode != null) {
@@ -134,6 +164,15 @@ class _PlaygroundState extends State<Playground> {
 
   void onRemoveAll() {
     _controller.removeAllNodes();
+  }
+
+  void getAllNodes() async {
+    final nodes = await _controller.getAllNodes();
+    print('Nodes on scene [${nodes.length}]:');
+
+    for(final node in nodes) {
+      print('${node.nodeId}: ${node.position} | ${node.rotation} | ${node.scale}');
+    }
   }
 
   void _handleHitTest() async {
