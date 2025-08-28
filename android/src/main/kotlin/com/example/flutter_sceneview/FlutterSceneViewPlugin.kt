@@ -6,39 +6,39 @@ import android.util.Log
 import androidx.lifecycle.LifecycleOwner
 import com.example.flutter_sceneview.handlers.PermissionsHandler
 import com.example.flutter_sceneview.factory.ScenePlatformViewFactory
+import com.example.flutter_sceneview.utils.Channels
 import io.flutter.embedding.engine.plugins.FlutterPlugin
-import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterAssets
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 
-/** FlutterSceneviewPlugin */
-class FlutterSceneviewPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware {
+/** FlutterSceneViewPlugin */
+class FlutterSceneViewPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, ActivityAware {
 
-    private val TAG = "FlutterSceneviewPlugin";
+    companion object {
+        private const val TAG = "FlutterSceneViewPlugin";
+    }
+
     private var flutterPluginBinding: FlutterPlugin.FlutterPluginBinding? = null;
-    private var isViewRegistered = false;
-
-    private var permissionsHandler: PermissionsHandler? = null
     private var activity: Activity? = null
 
-    /// The MethodChannel that will the communication between Flutter and native Android
-    ///
+    /// The main MethodChannel that will handle the communication between Flutter and native Android
     /// This local reference serves to register the plugin with the Flutter Engine and unregister it
     /// when the Flutter Engine is detached from the Activity
     private lateinit var channel: MethodChannel
 
-    companion object {
-        var flutterAssets: FlutterAssets? = null
-    }
+    // TODO Refactor permission handler to use arcore permissions
+    private var isViewRegistered = false;
+    private var permissionsHandler: PermissionsHandler? = null
+
 
     override fun onAttachedToEngine(flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         try {
-            channel = MethodChannel(flutterPluginBinding.binaryMessenger, "flutter_sceneview")
+            channel = MethodChannel(flutterPluginBinding.binaryMessenger, Channels.MAIN)
             channel.setMethodCallHandler(this)
             this.flutterPluginBinding = flutterPluginBinding
-            flutterAssets = flutterPluginBinding.flutterAssets
+
             Log.i(TAG, "onAttachedToEngine")
         } catch (e: Exception) {
             Log.e(TAG, "onAttachedToEngine", e)
@@ -54,9 +54,7 @@ class FlutterSceneviewPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, A
             // Hook into the permission result callback
             binding.addRequestPermissionsResultListener { requestCode, permissions, grantResults ->
                 permissionsHandler?.onRequestPermissionsResult(
-                    requestCode,
-                    permissions,
-                    grantResults
+                    requestCode, permissions, grantResults
                 )
                 true
             }
@@ -117,7 +115,6 @@ class FlutterSceneviewPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, A
     }
 
 
-
     //TODO: Move this to the right subpackage division or handler
     private fun handleCheckPermissions(result: MethodChannel.Result) {
         try {
@@ -131,11 +128,10 @@ class FlutterSceneviewPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, A
                     }
 
                     if (!isViewRegistered) {
+                        val viewTypeId = Channels.VIEW
                         flutterPluginBinding?.platformViewRegistry?.registerViewFactory(
-                            ScenePlatformViewFactory.VIEW_TYPE,
-                            ScenePlatformViewFactory(
-                                activity = activity!!,
-                                messenger = flutterPluginBinding!!.binaryMessenger,
+                            viewTypeId, ScenePlatformViewFactory(
+                                binding = flutterPluginBinding,
                                 lifecycle = lifecycle,
                             )
                         )

@@ -1,4 +1,4 @@
-package com.example.flutter_sceneview.ar
+package com.example.flutter_sceneview.channels
 
 import android.content.Context
 import android.util.Log
@@ -6,24 +6,28 @@ import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
 import com.example.flutter_sceneview.models.session.toMap
 import com.example.flutter_sceneview.utils.Channels
-import io.flutter.plugin.common.MethodChannel
-import io.github.sceneview.ar.ARSceneView
-import com.google.ar.core.TrackingState
 import com.google.ar.core.TrackingFailureReason
-import com.google.ar.core.dependencies.c
+import com.google.ar.core.TrackingState
+import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterAssets
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
+import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
+import io.github.sceneview.ar.ARSceneView
+import kotlinx.coroutines.CoroutineScope
 
-
-@Deprecated("Will be removed to favour the centralized management of channels")
-class SessionManager(
-    private val sceneView: ARSceneView,
+class SessionChannel(
+    private val context: Context,
+    private val flutterAssets: FlutterAssets,
+    private val mainScope: CoroutineScope,
     private val messenger: BinaryMessenger,
+    private val sceneView: ARSceneView
 ) : MethodCallHandler, DefaultLifecycleObserver {
 
+    companion object {
+        private const val TAG = "SessionChannel"
+    }
 
-    private val TAG = "SessionManager"
     private val _channel = MethodChannel(messenger, Channels.SESSION)
 
     private var isTracking = false
@@ -35,7 +39,6 @@ class SessionManager(
     private var lastCheckTime = 0L
     private var lastTrackingState: TrackingState? = null
     private var trackingFailure: TrackingFailureReason? = null
-
 
     init {
         _channel.setMethodCallHandler(this)
@@ -59,24 +62,20 @@ class SessionManager(
         }
     }
 
+
     fun startMonitoring() {
         sceneView.onFrame = ::onTrackingFrame
         sceneView.onTrackingFailureChanged = ::onTrackingFailure
-
-        //                onSessionResumed = { session ->
-//                    Log.i(TAG, "onSessionResumed")
-//                }
-//                onSessionFailed = { exception ->
-//                    Log.e(TAG, "onSessionFailed : $exception")
-//                }
-//                onSessionCreated = { session ->
-//                    Log.i(TAG, "onSessionCreated")
-//                }
-
-//                onTrackingFailureChanged = { reason ->
-//                    Log.i(TAG, "onTrackingFailureChanged: $reason");
-//                }
-
+//
+//        onSessionResumed = { session ->
+//            Log.i(TAG, "onSessionResumed")
+//        }
+//        onSessionFailed = { exception ->
+//            Log.e(TAG, "onSessionFailed : $exception")
+//        }
+//        onSessionCreated = { session ->
+//            Log.i(TAG, "onSessionCreated")
+//        }
     }
 
 
@@ -114,7 +113,6 @@ class SessionManager(
         } catch (e: Exception) {
             Log.e(TAG, e.toString())
         }
-
     }
 
     fun onTrackingFailure(reason: TrackingFailureReason?) {
@@ -128,10 +126,6 @@ class SessionManager(
         } catch (e: Exception) {
             Log.e(TAG, "Failed to return session tracking event")
         }
-
     }
-
 }
-
-
 

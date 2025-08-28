@@ -10,21 +10,21 @@ import 'package:flutter_sceneview/flutter_sceneview_platform_interface.dart';
 
 //TODO: Public entry of the plugin
 
-class FlutterSceneview {
+class FlutterSceneView {
   Future<String?> getPlatformVersion() {
-    return FlutterSceneviewPlatform.instance.getPlatformVersion();
+    return FlutterSceneViewPlatform.instance.getPlatformVersion();
   }
 
   Future<bool?> hasRegisteredView() {
-    return FlutterSceneviewPlatform.instance.hasRegisteredView();
+    return FlutterSceneViewPlatform.instance.hasRegisteredView();
   }
 
   Future<bool?> checkPermissions() {
-    return FlutterSceneviewPlatform.instance.checkPermissions();
+    return FlutterSceneViewPlatform.instance.checkPermissions();
   }
 
   Future<Node?> addNode({double x = 0, double y = 0, String? fileName}) {
-    return FlutterSceneviewPlatform.instance.addNode(
+    return FlutterSceneViewPlatform.instance.addNode(
       x: x,
       y: y,
       fileName: fileName,
@@ -32,7 +32,7 @@ class FlutterSceneview {
   }
 
   Future<Node?> addShapeNode(BaseShape shape, {double x = 0, double y = 0}) {
-    return FlutterSceneviewPlatform.instance.addShapeNode(shape);
+    return FlutterSceneViewPlatform.instance.addShapeNode(shape);
   }
 
   Future<Node?> addTextNode(
@@ -42,7 +42,7 @@ class FlutterSceneview {
     double size = 1,
     String? fontFamily,
   }) {
-    return FlutterSceneviewPlatform.instance.addTextNode(
+    return FlutterSceneViewPlatform.instance.addTextNode(
       text,
       x: x,
       y: y,
@@ -52,10 +52,10 @@ class FlutterSceneview {
   }
 
   Future<List<HitTestResult>> performHitTest(double x, double y) {
-    return FlutterSceneviewPlatform.instance.performHitTest(x, y);
+    return FlutterSceneViewPlatform.instance.performHitTest(x, y);
   }
 
   Future<Uint8List> sceneSnapshot() {
-    return FlutterSceneviewPlatform.instance.sceneSnapshot();
+    return FlutterSceneViewPlatform.instance.sceneSnapshot();
   }
 }

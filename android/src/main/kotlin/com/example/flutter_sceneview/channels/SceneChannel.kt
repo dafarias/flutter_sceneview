@@ -1,30 +1,42 @@
-package com.example.flutter_sceneview.ar
+package com.example.flutter_sceneview.channels
 
-import android.app.Activity
 import android.content.Context
-import android.content.res.AssetManager
 import android.media.Image
 import android.util.Log
-import android.view.SurfaceView
-import androidx.core.view.postDelayed
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
+import com.example.flutter_sceneview.ar.ARScene
+import com.example.flutter_sceneview.logs.NodeError
+import com.example.flutter_sceneview.models.materials.BaseMaterial
+import com.example.flutter_sceneview.models.nodes.*
+import com.example.flutter_sceneview.models.render.RenderInfo
 import com.example.flutter_sceneview.utils.AssetLoader
+import com.example.flutter_sceneview.utils.BitmapUtils
 import com.example.flutter_sceneview.utils.Channels
 import com.example.flutter_sceneview.utils.SnapshotUtils
-import com.google.android.filament.utils.KTX1Loader
-import io.github.sceneview.ar.ARSceneView
-import java.nio.ByteBuffer
-import java.nio.ByteOrder
 import com.google.android.filament.EntityManager
 import com.google.android.filament.LightManager
-import com.google.android.filament.Material
 import com.google.android.filament.Skybox
+import com.google.android.filament.utils.KTX1Loader
+import com.google.ar.core.Plane
+import com.google.ar.core.TrackingState
+import dev.romainguy.kotlin.math.Float3
+import dev.romainguy.kotlin.math.Quaternion
 import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterAssets
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
+import io.github.sceneview.ar.ARSceneView
+import io.github.sceneview.ar.arcore.createAnchorOrNull
+import io.github.sceneview.ar.arcore.position
+import io.github.sceneview.ar.arcore.rotation
+import io.github.sceneview.math.Position
+import io.github.sceneview.math.Transform
+import io.github.sceneview.model.Model
+import io.github.sceneview.node.ImageNode
+import io.github.sceneview.node.ModelNode
+import io.github.sceneview.node.Node
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -32,25 +44,24 @@ import kotlinx.coroutines.withContext
 import kotlin.math.cos
 import kotlin.math.sin
 
-@Deprecated("Will be removed to favour the centralized management of channels")
-class ARScene(
-    private val sceneView: ARSceneView,
-    private val messenger: BinaryMessenger,
+class SceneChannel(
     private val context: Context,
     private val flutterAssets: FlutterAssets,
+    private val mainScope: CoroutineScope,
+    private val messenger: BinaryMessenger,
+    private val sceneView: ARSceneView
+
 ) : MethodCallHandler, DefaultLifecycleObserver {
-    
+
     companion object {
-        private const val TAG = "ARScene"
+        private const val TAG = "SceneChannel"
     }
 
     private val _channel = MethodChannel(messenger, Channels.SCENE)
-
     private val engine = sceneView.engine
     private val entityManager = EntityManager.get()
     private val lightManager = engine.lightManager
     private val assetLoader = AssetLoader(context, flutterAssets)
-
 
     init {
         _channel.setMethodCallHandler(this)
@@ -58,9 +69,8 @@ class ARScene(
     }
 
     override fun onDestroy(owner: LifecycleOwner) {
-        Log.i(TAG, "ARScene onDestroy")
+        Log.i(TAG, "onDestroy")
         _channel.setMethodCallHandler(null)
-        // …clean up…
         sceneView.lifecycle?.removeObserver(this)
     }
 
@@ -70,10 +80,10 @@ class ARScene(
                 onTakeSnapshot(result)
                 return
             }
-
             else -> result.notImplemented()
         }
     }
+
 
     /**
      * Adds a sunlight to the scene with default parameters.
@@ -221,4 +231,5 @@ class ARScene(
             }
         }
     }
+
 }

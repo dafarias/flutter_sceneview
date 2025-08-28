@@ -15,7 +15,7 @@ class UltralyticsIntegration extends StatefulWidget {
 class _UltralyticsIntegrationState extends State<UltralyticsIntegration> {
   DetectionService? _detectionService;
 
-  final _flutterSceneviewPlugin = FlutterSceneview();
+  final _flutterSceneviewPlugin = FlutterSceneView();
   late final ARSceneController _arSceneController;
 
   List<BallDetection> detectedBalls = [];

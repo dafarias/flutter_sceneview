@@ -45,13 +45,13 @@ class _SceneViewState extends State<SceneView> {
   // Remove or improve usage
   @Deprecated('The method should be removed or improve its usage')
   Future<bool> _checkViewRegistration() async {
-    final isReady = await FlutterSceneview().hasRegisteredView() ?? false;
+    final isReady = await FlutterSceneView().hasRegisteredView() ?? false;
     debugPrint('AR View registered: $isReady');
     return isReady;
   }
 
   Future<void> _checkPermissions() async {
-    final result = await FlutterSceneview().checkPermissions() ?? false;
+    final result = await FlutterSceneView().checkPermissions() ?? false;
     if (result) {
       setState(() => _hasPermission = true);
       // After permissions, wait for session controller and start listening to events

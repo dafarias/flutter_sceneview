@@ -3,7 +3,6 @@ package com.example.flutter_sceneview.controllers
 import android.content.Context
 import android.graphics.*
 import com.example.flutter_sceneview.models.nodes.*
-import com.example.flutter_sceneview.FlutterSceneviewPlugin
 import android.util.Log
 import com.example.flutter_sceneview.models.render.RenderInfo
 import com.example.flutter_sceneview.results.ARResult
@@ -11,29 +10,31 @@ import com.example.flutter_sceneview.results.NodeResult
 import com.google.ar.core.Plane
 import com.google.ar.core.TrackingState
 import dev.romainguy.kotlin.math.Float3
-import dev.romainguy.kotlin.math.Quaternion
 import io.github.sceneview.ar.ARSceneView
 import io.github.sceneview.math.Position
 import io.github.sceneview.node.ModelNode
 import io.github.sceneview.loaders.ModelLoader
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
-import java.io.File
 import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterAssets
 import io.flutter.plugin.common.MethodChannel
 import io.github.sceneview.ar.arcore.createAnchorOrNull
-import io.github.sceneview.math.Transform
 import io.github.sceneview.model.Model
-import io.github.sceneview.node.Node
-import java.io.FileOutputStream
 import java.util.UUID
-import androidx.core.graphics.createBitmap
 import com.example.flutter_sceneview.models.materials.BaseMaterial
 import com.example.flutter_sceneview.models.shapes.BaseShape
+import com.example.flutter_sceneview.utils.AssetLoader
+import com.example.flutter_sceneview.utils.BitmapUtils
+import com.example.flutter_sceneview.utils.MathUtils
+import com.example.flutter_sceneview.utils.MathUtils.rotationFromMap
 import io.github.sceneview.ar.arcore.position
+import io.github.sceneview.ar.arcore.quaternion
 import io.github.sceneview.ar.arcore.rotation
 import io.github.sceneview.node.ImageNode
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
+@Deprecated("Will be removed to favour the centralized management of channels")
 class ARController(
     private val context: Context,
     private val sceneView: ARSceneView,
@@ -44,10 +45,10 @@ class ARController(
 ) {
     private val TAG = "ARController"
     private val defaultModelSrc = "models/Duck.glb"
-
+    private val assetLoader = AssetLoader(context, flutterAssets)
     private val preloadedModels = mutableMapOf<String, Model>()
 
-    // TODO: Isn't used, remove?
+
     fun onTap(position: Position, fileName: String? = null) {
         coroutineScope.launch {
             try {
@@ -83,23 +84,6 @@ class ARController(
         }
     }
 
-//    private fun resolveAssetPath(fileName: String?): String {
-//        val default = "models/Duck.glb"
-//        return if (fileName.isNullOrEmpty()) {
-//            default
-//        } else {
-//            val file = File(context.filesDir, fileName)
-//            if (!file.exists()) {
-//                val pathInFlutterAssets =
-//                    flutterAssets.dartExecutor.flutterAssets.getAssetFilePathByName("assets/models/$fileName")
-//                context.assets.open(pathInFlutterAssets).use { input ->
-//                    file.outputStream().use { output -> input.copyTo(output) }
-//                }
-//            }
-//            file.toURI().toString()
-//        }
-//    }
-//
 
     //todo
     // Should return anchored node related info to be able to remove the node, clone it or
@@ -221,11 +205,11 @@ class ARController(
 
             val positionMap =
                 args["position"] as? Map<*, *> ?: return NodeResult.Failed("Missing position")
-            val position =
-                positionFromMap(positionMap) ?: return NodeResult.Failed("Invalid position")
+            val position = MathUtils.positionFromMap(positionMap)
+                ?: return NodeResult.Failed("Invalid position")
 
             val rotationMap = args["rotation"] as? Map<*, *>
-            val rotation = rotationMap?.let { positionFromMap(it) }
+            val rotation = rotationMap?.let { rotationFromMap(it) }
 
 
             shapeNode.name = UUID.randomUUID().toString()
@@ -251,36 +235,8 @@ class ARController(
 
     }
 
-    //todo: Return success on node removal
-    fun removeNode(nodeId: String) { //NodeResult
-        try {
-            val targetNode = sceneView.childNodes.firstOrNull { it.name == nodeId }
-            if (targetNode != null) {
-                sceneView.removeChildNode(targetNode)
-                Log.d("ARSceneController", "Node with id $nodeId removed successfully.")
-            } else {
-                Log.w("ARSceneController", "Node with id $nodeId not found.")
-            }
 
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to remove node with id:$nodeId. ${e.message}")
-        }
-    }
-
-    fun removeAllNodes() {
-        try {
-            sceneView.childNodes.forEach { node ->
-                sceneView.removeChildNode(node)
-            }
-            //return NodeResult.Success("All nodes removed")
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to remove all nodes from the scene ${e.message}")
-            //return NodeResult.Failed("Failed to remove nodes from the scene")
-        }
-    }
-
-
-    fun hitTest(args: Map<*, *>): ARResult {  //NodeResult
+    fun hitTest(args: Map<*, *>): ARResult {
         try {
             val coordX = (args["x"] as? Double)?.toFloat()
             val coordY = (args["y"] as? Double)?.toFloat()
@@ -316,7 +272,16 @@ class ARController(
                             hit.hitPose.position
                             print(hit.hitPose.translation)
                             // Translation is the same as Position
-                            list.add(HitTestResult(hit.distance, hit.hitPose).toMap())
+
+                            list.add(
+                                HitTestResult(
+                                    hit.distance, Pose(
+                                        hit.hitPose.position,
+                                        hit.hitPose.rotation,
+                                        hit.hitPose.quaternion
+                                    )
+                                ).toMap()
+                            )
                         }
                     }
                     Log.i("HitTestResult", "$list")
@@ -331,52 +296,6 @@ class ARController(
         return ARResult.Hits(ArrayList())
     }
 
-
-    fun normalizePoint(
-        xLogical: Float, yLogical: Float, renderInfo: RenderInfo?
-    ): Pair<Float, Float>? {
-        try {
-
-            return if (renderInfo != null) {
-                val pixelRatio = renderInfo.pixelRatio.toFloat()
-
-                val adjustedX = (xLogical * pixelRatio)
-                val adjustedY = (yLogical * pixelRatio)
-
-                val adjustedPosX = (renderInfo.position.dx * pixelRatio).toFloat()
-                val adjustedPosY = (renderInfo.position.dy * pixelRatio).toFloat()
-
-                val adjustedWidth = (renderInfo.size.width * pixelRatio).toFloat()
-                val adjustedHeight = (renderInfo.size.height * pixelRatio).toFloat()
-
-                val localX = ((adjustedX - adjustedPosX) / adjustedWidth).coerceIn(0f, 1f)
-                val localY = ((adjustedY - adjustedPosY) / adjustedHeight).coerceIn(0f, 1f)
-
-                return Pair(localX, localY)
-
-            } else null
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Normalization failed ${e.message}")
-        }
-
-        return null
-    }
-
-
-    suspend fun loadModelFrom(fileName: String? = null): Model? {
-        return try {
-            val assetPath = getAssetPath(fileName)
-            val model = sceneView.modelLoader.loadModel(assetPath)
-            if (model == null) {
-                Log.e(TAG, "Model is null for path: $assetPath")
-            }
-            model
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to load model: ${e.message}")
-            null
-        }
-    }
 
     fun addTextNode(
         args: Map<*, *>,
@@ -401,7 +320,7 @@ class ARController(
         }
         val renderInfo = RenderInfo.fromMap(renderInfoMap)
 
-        if(normalize) {
+        if (normalize) {
             val (normalizedX, normalizedY) = normalizePoint(x, y, renderInfo) ?: run {
                 Log.e(TAG, "Normalization failed")
                 return
@@ -423,8 +342,7 @@ class ARController(
         )?.createAnchorOrNull()
 
         if (hitResultAnchor == null) {
-            val failureMessage =
-                "No AR surface found at screen coordinates x=$x, y=$y"
+            val failureMessage = "No AR surface found at screen coordinates x=$x, y=$y"
             Log.e(TAG, failureMessage)
             return
         }
@@ -432,8 +350,9 @@ class ARController(
         val pose = hitResultAnchor.pose
         val hitPosition = Position(pose.tx(), pose.ty(), pose.tz())
 
-        val textBitmap =
-            createTextBitmap(text, size = size, fontFamily = fontFamily, textColor = textColor)
+        val textBitmap = BitmapUtils(context, flutterAssets).createTextBitmap(
+            text = text, fontFamily = fontFamily, textColor = textColor
+        )
 
         // Calculate AR height maintaining aspect ratio
         val aspectRatio = textBitmap.height.toFloat() / textBitmap.width.toFloat()
@@ -453,119 +372,33 @@ class ARController(
         sceneView.addChildNode(textNode)
     }
 
-
-    fun transformNode(node: Node?) {
-        try {
-            node?.transform(
-                Transform(
-                    position = node.position,//?: Position(),
-                    // Rotate around X),
-                    quaternion = Quaternion.fromAxisAngle(Float3(1.0f, 0.0f, 0.0f), 90f),
-                    scale = node.scale // ?: Scale(1.0f)
-                )
-            )
-
-        } catch (e: Exception) {
-            Log.e(TAG, " Failed to transform node with: ${e.message}")
+    private suspend fun loadModelFrom(fileName: String?, loadDefault: Boolean = false): Model? =
+        withContext(Dispatchers.IO) {
+            val assetPath = assetLoader.resolveAssetPath(fileName, loadDefault)
+            modelLoader.loadModel(assetPath)
         }
+
+
+
+    private fun normalizePoint(x: Float, y: Float, renderInfo: RenderInfo?): Pair<Float, Float>? {
+        return if (renderInfo != null) {
+            val pixelRatio = renderInfo.pixelRatio.toFloat()
+
+            val adjustedX = (x * pixelRatio)
+            val adjustedY = (y * pixelRatio)
+
+            val adjustedPosX = (renderInfo.position.dx * pixelRatio).toFloat()
+            val adjustedPosY = (renderInfo.position.dy * pixelRatio).toFloat()
+
+            val adjustedWidth = (renderInfo.size.width * pixelRatio).toFloat()
+            val adjustedHeight = (renderInfo.size.height * pixelRatio).toFloat()
+
+            val localX = ((adjustedX - adjustedPosX) / adjustedWidth).coerceIn(0f, 1f)
+            val localY = ((adjustedY - adjustedPosY) / adjustedHeight).coerceIn(0f, 1f)
+
+            return Pair(localX, localY)
+        } else null
     }
 
 
-    //TODO: Move to a helper or to a util class so this class only worries about handling scene objects
-    fun getAssetPath(filePath: String? = null): String {
-        val default = defaultModelSrc
-        val flutterAssets = FlutterSceneviewPlugin.flutterAssets ?: return ""
-
-        return try {
-            if (filePath.isNullOrEmpty()) {
-                // Load the default asset directly from plugin's assets (no copying)
-                // Just return the relative path inside the plugin assets folder
-                default
-            } else {
-                val localFile = File(context.filesDir, filePath)
-
-                if (!localFile.exists()) {
-                    localFile.parentFile?.mkdirs()
-
-                    // Get Flutter asset relative path inside Flutter APK
-                    // (e.g. "flutter_assets/assets/models/golf_flag.glb")
-                    val flutterAssetRelativePath =
-                        flutterAssets.getAssetFilePathByName("assets/$filePath")
-
-
-                    context.assets.open(flutterAssetRelativePath).use { input ->
-                        FileOutputStream(localFile).use { output ->
-                            input.copyTo(output)
-                        }
-                    }
-                }
-
-                // Return absolute file path on local storage for ModelLoader to load as File
-                // return localFile.absolutePath
-
-                // If using loadInstance, then for some reason the absolutePath doesn't work,
-                // but the URI works
-                print(localFile.toURI().toString())
-                return localFile.toURI().toString()
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to load 3d asset $filePath: ${e.cause}")
-            return default
-        }
-    }
-
-
-    //TODO: Move to helpers.
-    // Args will be: Text, textColor,
-    fun createTextBitmap(
-        text: String,
-        size: Float = 1f,
-        fontFamily: String? = "",
-        bitmapTextSize: Float = 200f,
-        textColor: Int = Color.WHITE,
-        pixelDensity: Int = 2000
-    ): Bitmap {
-
-        var typefaceAsset: Typeface? = null
-
-        if (fontFamily != null && fontFamily.isNotEmpty()) {
-            // Loads typeface from Flutter asset
-            val fontPathInApk = flutterAssets?.getAssetFilePathByName(fontFamily)
-            typefaceAsset = try {
-                Typeface.createFromAsset(context.assets, fontPathInApk)
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to load font family or typeface: ${e.cause}")
-                Typeface.DEFAULT // fallback if font fails to load
-            }
-        }
-
-
-        // The text size is used to calculate the crispness / resolution
-        // of the pixels used in the text
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            textSize = bitmapTextSize
-            color = textColor
-            isAntiAlias = true
-            isDither = true
-            isFilterBitmap = true
-            typeface = typefaceAsset
-        }
-
-        val targetWidthPx = (size * pixelDensity).toInt()
-
-        //  Measure and adjust text size proportionally to fit target width
-        val measuredWidth = paint.measureText(text)
-        val proportionalSize = (targetWidthPx / measuredWidth) * paint.textSize
-        paint.textSize = proportionalSize
-
-        val textWidth = paint.measureText(text).toInt()
-        val textHeight = (paint.descent() - paint.ascent()).toInt()
-
-        val bitmap = createBitmap(textWidth + 40, textHeight + 40)
-        val canvas = Canvas(bitmap)
-        canvas.drawColor(Color.TRANSPARENT)
-        canvas.drawText(text, 20f, textHeight.toFloat(), paint)
-
-        return bitmap
-    }
 }

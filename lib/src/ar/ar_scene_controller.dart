@@ -2,12 +2,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_sceneview/flutter_sceneview.dart';
 import 'package:flutter_sceneview/src/logging/node_logs.dart';
+import 'package:flutter_sceneview/src/utils/channels.dart';
 import 'package:flutter_sceneview/src/utils/scene_render.dart';
 
 class ARSceneController {
   final int sceneId;
   final GlobalKey arViewKey;
-  final MethodChannel _arChannel = const MethodChannel('ar_view_wrapper');
+  final MethodChannel _arChannel = const MethodChannel(Channels.view);
 
   static late ARSceneController instance;
   bool _initialized = false;

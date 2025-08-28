@@ -31,6 +31,9 @@ class BaseMaterial(
         val DEFAULT = BaseMaterial()
 
         fun fromMap(map: Map<*, *>): BaseMaterial? {
+            if (map.isEmpty()) {
+                return DEFAULT
+            }
             try {
                 val color = getIntColor(map["color"] as? List<*>) ?: DEFAULT_COLOR
                 val metallic =

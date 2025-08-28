@@ -7,7 +7,7 @@ import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 
 class MockFlutterSceneviewPlatform
     with MockPlatformInterfaceMixin
-    implements FlutterSceneviewPlatform {
+    implements FlutterSceneViewPlatform {
   @override
   Future<String?> getPlatformVersion() => Future.value('42');
 
@@ -85,17 +85,17 @@ class MockFlutterSceneviewPlatform
 }
 
 void main() {
-  final FlutterSceneviewPlatform initialPlatform =
-      FlutterSceneviewPlatform.instance;
+  final FlutterSceneViewPlatform initialPlatform =
+      FlutterSceneViewPlatform.instance;
 
-  test('$MethodChannelFlutterSceneview is the default instance', () {
-    expect(initialPlatform, isInstanceOf<MethodChannelFlutterSceneview>());
+  test('$MethodChannelFlutterSceneView is the default instance', () {
+    expect(initialPlatform, isInstanceOf<MethodChannelFlutterSceneView>());
   });
 
   test('getPlatformVersion', () async {
-    FlutterSceneview flutterSceneviewPlugin = FlutterSceneview();
+    FlutterSceneView flutterSceneviewPlugin = FlutterSceneView();
     MockFlutterSceneviewPlatform fakePlatform = MockFlutterSceneviewPlatform();
-    FlutterSceneviewPlatform.instance = fakePlatform;
+    FlutterSceneViewPlatform.instance = fakePlatform;
 
     expect(await flutterSceneviewPlugin.getPlatformVersion(), '42');
   });

@@ -4,10 +4,11 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_sceneview/src/models/session/session_event.dart';
 import 'package:flutter_sceneview/src/models/session/tracking.dart';
+import 'package:flutter_sceneview/src/utils/channels.dart';
 
 class ARSessionController {
   final int sceneId;
-  final MethodChannel _sessionChannel = const MethodChannel('ar_session');
+  final MethodChannel _sessionChannel = const MethodChannel(Channels.session);
 
   static late ARSessionController instance;
 

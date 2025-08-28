@@ -12,7 +12,7 @@ class Playground extends StatefulWidget {
 
 class _PlaygroundState extends State<Playground> {
   String _platformVersion = 'Unknown';
-  final _flutterSceneviewPlugin = FlutterSceneview();
+  final _flutterSceneviewPlugin = FlutterSceneView();
 
   late final ARSceneController _controller;
   late final ARSessionController _session;

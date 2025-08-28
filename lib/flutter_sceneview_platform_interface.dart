@@ -3,23 +3,23 @@ import 'package:flutter_sceneview/flutter_sceneview.dart';
 import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'flutter_sceneview_method_channel.dart';
 
-abstract class FlutterSceneviewPlatform extends PlatformInterface {
+abstract class FlutterSceneViewPlatform extends PlatformInterface {
   /// Constructs a FlutterSceneviewPlatform.
-  FlutterSceneviewPlatform() : super(token: _token);
+  FlutterSceneViewPlatform() : super(token: _token);
 
   static final Object _token = Object();
 
-  static FlutterSceneviewPlatform _instance = MethodChannelFlutterSceneview();
+  static FlutterSceneViewPlatform _instance = MethodChannelFlutterSceneView();
 
-  /// The default instance of [FlutterSceneviewPlatform] to use.
+  /// The default instance of [FlutterSceneViewPlatform] to use.
   ///
-  /// Defaults to [MethodChannelFlutterSceneview].
-  static FlutterSceneviewPlatform get instance => _instance;
+  /// Defaults to [MethodChannelFlutterSceneView].
+  static FlutterSceneViewPlatform get instance => _instance;
 
   /// Platform-specific implementations should set this with their own
-  /// platform-specific class that extends [FlutterSceneviewPlatform] when
+  /// platform-specific class that extends [FlutterSceneViewPlatform] when
   /// they register themselves.
-  static set instance(FlutterSceneviewPlatform instance) {
+  static set instance(FlutterSceneViewPlatform instance) {
     PlatformInterface.verifyToken(instance, _token);
     _instance = instance;
   }

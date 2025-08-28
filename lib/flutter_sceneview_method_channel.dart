@@ -4,8 +4,8 @@ import 'package:flutter_sceneview/flutter_sceneview.dart';
 
 import 'flutter_sceneview_platform_interface.dart';
 
-/// An implementation of [FlutterSceneviewPlatform] that uses method channels.
-class MethodChannelFlutterSceneview extends FlutterSceneviewPlatform {
+/// An implementation of [FlutterSceneViewPlatform] that uses method channels.
+class MethodChannelFlutterSceneView extends FlutterSceneViewPlatform {
   /// The method channel used to interact with the native platform.
   @visibleForTesting
   final methodChannel = const MethodChannel('flutter_sceneview');

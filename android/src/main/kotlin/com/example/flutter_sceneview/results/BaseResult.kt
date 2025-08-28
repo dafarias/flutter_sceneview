@@ -2,12 +2,16 @@ package com.example.flutter_sceneview.results
 
 import com.example.flutter_sceneview.models.nodes.NodeInfo
 
+
+@Deprecated("This will be removed in favor of returning the results from the same channel they are created on")
 sealed interface BaseResult;
 
 sealed interface NodeResult : BaseResult {
-    data class Placed(val node: NodeInfo,) : NodeResult
+    data class Placed(val node: NodeInfo) : NodeResult
     data class Failed(val reason: String) : NodeResult
+    data class Success(val result: Boolean? = null, val message: String? = null) : NodeResult
 }
+
 sealed interface ARResult : BaseResult {
     data class Hits(val hitResult: ArrayList<Map<String, Any>>) : ARResult
     data class Error(val reason: String) : ARResult
