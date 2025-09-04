@@ -2,6 +2,7 @@ package com.example.flutter_sceneview.utils
 
 import android.content.Context
 import android.util.Log
+import android.view.View
 import com.example.flutter_sceneview.FlutterSceneViewPlugin
 import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterAssets
 import java.io.File
@@ -16,6 +17,9 @@ class AssetLoader(private val context: Context, private val flutterAssets: Flutt
         private const val TAG = "AssetLoader"
         private const val DEFAULT_MODEL = "models/Duck.glb"
     }
+
+    val defaultModel: String
+        get() = DEFAULT_MODEL
 
     fun resolveAssetPath(filePath: String?, loadDefaultGltf: Boolean = false): String {
         try {

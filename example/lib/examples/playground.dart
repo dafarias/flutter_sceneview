@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_sceneview/flutter_sceneview.dart';
-import 'package:vector_math/vector_math_64.dart' hide Sphere;
+import 'package:vector_math/vector_math_64.dart' hide Sphere, Colors;
 
 class Playground extends StatefulWidget {
   const Playground({super.key});
@@ -14,8 +14,9 @@ class _PlaygroundState extends State<Playground> {
   String _platformVersion = 'Unknown';
   final _flutterSceneviewPlugin = FlutterSceneView();
 
-  late final ARSceneController _controller;
   late final ARSessionController _session;
+
+  late final SceneViewController _controller;
 
   final List<Node> placedNodes = [];
 
@@ -57,6 +58,7 @@ class _PlaygroundState extends State<Playground> {
         body: Center(
           child: SceneView(
             onViewCreated: (controller) => _controller = controller,
+
             sessionController: (session) => _session = session,
             overlayBehavior: OverlayBehavior.showAlwaysOnTrackingChanged,
           ),
@@ -74,7 +76,7 @@ class _PlaygroundState extends State<Playground> {
             children: <Widget>[
               ElevatedButton(
                 onPressed: () {
-                      checkEvents();
+                  // checkEvents();
                   removeById(nodeId: placedNodes.firstOrNull?.nodeId ?? "");
                 },
                 child: Text('Remove by id'),
@@ -97,6 +99,8 @@ class _PlaygroundState extends State<Playground> {
   }
 
   void placeNode() async {
+    // _controller.node.addNode(fileName: fileName, x: x, y: y, renderInfo: renderInfo)
+
     final node = await _flutterSceneviewPlugin.addNode(
       x: 200,
       y: 600,
@@ -114,13 +118,8 @@ class _PlaygroundState extends State<Playground> {
     final material = BaseMaterial(color: Color.fromARGB(255, 255, 255, 255));
 
     // The shape should not depend on the node to be created
-    final sphere = Sphere(node, material: material, radius: 0.05);
-    final torus = Torus(
-      node,
-      material: material,
-      majorRadius: 2,
-      minorRadius: 0.05,
-    );
+    final sphere = BaseShape.sphere(radius: 0.05);
+    final torus = BaseShape.torus(majorRadius: 2, minorRadius: 0.05);
     final sphereNode = await _flutterSceneviewPlugin.addShapeNode(sphere);
 
     if (sphereNode != null) {
@@ -129,23 +128,49 @@ class _PlaygroundState extends State<Playground> {
   }
 
   void removeById({required String nodeId}) {
-    _controller.removeNode(nodeId: nodeId);
+    _controller.node.removeNode(nodeId: nodeId);
   }
 
   void onRemoveAll() {
-    _controller.removeAllNodes();
+    _controller.node.removeAllNodes();
   }
 
   void _handleHitTest() async {
-    final results = await _flutterSceneviewPlugin.performHitTest(500, 500);
+    final node = SceneNode(
+      parentId: "anchor",
+      nodeId: "child",
+      position: Vector3.all(0),
 
-    if (results.isEmpty) {
-      print('[Flutter] No hit test results');
-      return;
-    }
+      //Annoying type, forgetting to change it is a pain
+      // type: NodeType.shape,
+      // config: NodeConfig.shape(
+      //   shape: BaseShape.torus(minorRadius: 0.1, majorRadius: 1),
+      //   material: BaseMaterial(color: Colors.lightGreenAccent),
+      // ),
+      type: NodeType.text,
+      config: NodeConfig.text(
+        text: 'Hola mundo',
+        textColor: Colors.indigoAccent,
+      ),
+    );
 
-    final hitTestResult = results.first.pose;
-    placeShapeNode(hitTestResult.position, hitTestResult.rotation);
+    //Node can be created on the call and received if creeation was successful
+    final result = await _controller.node.createAnchorNode(
+      x: 300,
+      y: 400,
+      node: node,
+      normalize: true,
+    );
+
+    // final results = await _flutterSceneviewPlugin.performHitTest(500, 500);
+
+    // if (results.isEmpty) {
+    //   print('[Flutter] No hit test results');
+    //   return;
+    // }
+
+    // final hitTestResult = results.first.pose;
+    // placeShapeNode(hitTestResult.position, hitTestResult.rotation);
   }
 
   void goToScene() {

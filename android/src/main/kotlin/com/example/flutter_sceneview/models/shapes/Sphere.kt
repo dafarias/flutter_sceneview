@@ -24,7 +24,7 @@ class Sphere(
 
     override fun toMap(): Map<String, Any?> {
         return mapOf(
-            "shapeType" to shapeType.name, "radius" to radius
+            "shapeType" to shapeType.name.lowercase(), "radius" to radius
         )
     }
 

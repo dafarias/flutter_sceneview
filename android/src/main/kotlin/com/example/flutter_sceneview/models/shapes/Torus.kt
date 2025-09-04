@@ -33,7 +33,7 @@ class Torus(
 
     override fun toMap(): Map<String, Any?> {
         return mapOf(
-            "shapeType" to shapeType.name,
+            "shapeType" to shapeType.name.lowercase(),
             "majorRadius" to majorRadius,
             "minorRadius" to minorRadius
         )

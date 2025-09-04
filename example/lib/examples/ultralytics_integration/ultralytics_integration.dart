@@ -17,6 +17,7 @@ class _UltralyticsIntegrationState extends State<UltralyticsIntegration> {
 
   final _flutterSceneviewPlugin = FlutterSceneView();
   late final ARSceneController _arSceneController;
+  late final SceneViewController _sceneViewController;
 
   List<BallDetection> detectedBalls = [];
 
@@ -33,7 +34,7 @@ class _UltralyticsIntegrationState extends State<UltralyticsIntegration> {
         appBar: AppBar(title: Text('Example w/ ultralytics_yolo')),
         body: Center(
           child: SceneView(
-            onViewCreated: (controller) => _arSceneController = controller,
+            onViewCreated: (controller) => _sceneViewController = controller,
           ),
         ),
         floatingActionButton: FloatingActionButton(
@@ -112,13 +113,9 @@ class _UltralyticsIntegrationState extends State<UltralyticsIntegration> {
     required double radius,
   }) async {
     final material = BaseMaterial(color: Color.fromARGB(255, 255, 255, 255));
-    final node = Node(position: worldPosition,);
-    final torus = Torus(
-      node,
-      material: material,
-      majorRadius: 1,
-      minorRadius: 0.05,
-    );
+    final node = Node(position: worldPosition);
+
+    final torus = BaseShape.torus(majorRadius: 1, minorRadius: 0.05);
 
     _arSceneController.addShapeNode(torus);
   }
@@ -148,7 +145,8 @@ class _UltralyticsIntegrationState extends State<UltralyticsIntegration> {
         rotation: ballWorldRotation,
       );
       final material = BaseMaterial(color: Color.fromARGB(0, 0, 0, 0));
-      final sphere = Sphere(node, material: material, radius: 0.025);
+      final sphere = BaseShape.sphere(radius: 0.025);
+
       await _flutterSceneviewPlugin.addShapeNode(sphere);
 
       double distance = _calculateDistanceBetweenPoints(

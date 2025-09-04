@@ -1,41 +1,132 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_sceneview/src/models/render/render_info.dart';
-import 'package:flutter_sceneview/src/utils/channels.dart';
+import 'package:flutter_sceneview/src/models/models.dart';
+import 'package:flutter_sceneview/src/utils/scene_render.dart';
 
 class NodeChannel {
-  static final _channel = MethodChannel(Channels.node);
+  final MethodChannel _channel;
 
-  //NodeResult
-  Future<void> addNode({
-    required String fileName,
+  NodeChannel(this._channel);
+
+  Future<SceneNode?> createAnchorNode({
     required double x,
     required double y,
-    required RenderInfo renderInfo,
-    bool testPlacement = false,
+    SceneNode? node,
+    bool normalize = false,
   }) async {
+    final args = <String, dynamic>{};
     try {
-      final result = await _channel
-          .invokeMethod<Map<dynamic, dynamic>>('addNode', {
-            'fileName': fileName,
-            'x': x,
-            'y': y,
-            'renderInfo': renderInfo.toJson(),
-            'test': testPlacement,
-          });
-      // return NodeResult.fromMap(result ?? {});
+      args['node'] = node?.toJson();
+      args['x'] = x;
+      args['y'] = y;
+
+      if (normalize) {
+        args['normalize'] = true;
+        args['renderInfo'] = SceneUtils.renderInfo?.toJson();
+      }
+
+      final result = await _channel.invokeMethod('createAnchorNode', args);
+      if (result == null) {
+        throw Exception('createAnchorNode: Null value returned as SceneNode');
+      }
+
+      return SceneNode.fromJson(Map<String, dynamic>.from(result));
     } catch (e) {
-      // return NodeResult.failed(e.toString());
+      debugPrint(e.toString());
+      return null;
     }
   }
 
-  // Similarly for addShapeNode, removeNode, removeAllNodes, hitTest, addTextNode
-  // Example for removeNode:
-  Future<bool> removeNode(String nodeId) async {
+  Future<void> createNode({
+    required double x,
+    required double y,
+    SceneNode? node,
+  }) async {
+    final args = <String, dynamic>{};
     try {
-      await _channel.invokeMethod('removeNode', {'nodeId': nodeId});
+      args['node'] = node?.toJson();
+      args['x'] = x;
+      args['y'] = y;
+
+      await _channel.invokeMethod('createNode', args);
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  Future<void> addNode({SceneNode? node, bool testPlacement = false}) async {
+    final args = <String, dynamic>{};
+    try {
+      await _channel.invokeMethod('addNode', args);
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  Future<void> addChildNode({SceneNode? parent, SceneNode? child}) async {
+    final args = <String, dynamic>{};
+    try {
+      await _channel.invokeMethod('addChildNode', args);
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
+
+  Future<bool> removeNode({required String nodeId}) async {
+    try {
+      final args = <String, dynamic>{};
+      args['nodeId'] = nodeId;
+      await _channel.invokeMethod('removeNode', args);
       return true;
     } catch (e) {
+      debugPrint("removeNode with id: $nodeId: $e");
       return false;
     }
+  }
+
+  Future<bool> removeAllNodes() async {
+    try {
+      await _channel.invokeMethod('removeAllNodes');
+      return true;
+    } catch (e) {
+      debugPrint("removeAllNodes: $e");
+      return false;
+    }
+  }
+
+  Future<List<HitTestResult>> hitTest({
+    required double x,
+    required double y,
+  }) async {
+    try {
+      final args = <String, dynamic>{};
+
+      final hitTestResultRaw = await _channel.invokeMethod<List<dynamic>?>(
+        'performHitTest',
+        {
+          'x': x, 'y': y,
+          // 'renderInfo': SceneUtils.renderInfo?.toJson()
+        },
+      );
+
+      final hitTestResult =
+          hitTestResultRaw
+              ?.map((item) => HitTestResult.fromMap(item))
+              .toList() ??
+          [];
+      return hitTestResult;
+    } catch (e) {
+      debugPrint(e.toString());
+      return [];
+    }
+  }
+
+  Future<void> dispose() async {
+    try {
+      await _channel.invokeMethod('dispose', "sceneId");
+    } catch (e) {
+      debugPrint('ARSceneController dispose error: $e');
+    }
+    // _initialized = false;
   }
 }

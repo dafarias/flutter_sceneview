@@ -49,10 +49,6 @@ class SceneViewWrapper(
         binding.flutterAssets
     }
 
-    // Method channels
-//    private var _controller: ARController
-//    private var sessionManager: SessionManager
-//    private var arScene: ARScene
     private var nodeChannel: NodeChannel
     private var sceneChannel: SceneChannel
     private var sessionChannel: SessionChannel

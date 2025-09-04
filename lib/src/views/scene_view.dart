@@ -10,13 +10,13 @@ import 'package:flutter_sceneview/src/views/tutorial_overlay.dart';
 class SceneView extends StatefulWidget {
   const SceneView({
     super.key,
-    this.onViewCreated,
     this.sessionController,
     this.overlayBehavior = OverlayBehavior.showOnInitialization,
+    this.onViewCreated,
   });
 
-  final Function(ARSceneController)? onViewCreated;
   final Function(ARSessionController)? sessionController;
+  final Function(SceneViewController)? onViewCreated;
   final OverlayBehavior overlayBehavior;
 
   @override
@@ -24,8 +24,9 @@ class SceneView extends StatefulWidget {
 }
 
 class _SceneViewState extends State<SceneView> {
-  final Completer<ARSceneController> _controller =
-      Completer<ARSceneController>();
+  final Completer<SceneViewController> _controller =
+      Completer<SceneViewController>();
+
   final Completer<ARSessionController> _sessionController =
       Completer<ARSessionController>();
 
@@ -88,12 +89,13 @@ class _SceneViewState extends State<SceneView> {
   }
 
   Future<void> _disposeControllers() async {
-    final ARSceneController controller = await _controller.future;
     final ARSessionController sessionController =
         await _sessionController.future;
 
-    controller.dispose();
+    final SceneViewController sceneViewController = await _controller.future;
+
     sessionController.dispose();
+    sceneViewController.dispose();
   }
 
   @override
@@ -114,10 +116,11 @@ class _SceneViewState extends State<SceneView> {
           ),
 
         _AndroidViewSurface(
-          onControllersReady: (sceneController, sessionController) {
-            _controller.complete(sceneController);
+          onControllersReady: (sessionController, sceneViewController) {
+            _controller.complete(sceneViewController);
+            widget.onViewCreated?.call(sceneViewController);
+
             _sessionController.complete(sessionController);
-            widget.onViewCreated?.call(sceneController);
             widget.sessionController?.call(sessionController);
           },
         ),
@@ -130,7 +133,7 @@ class _SceneViewState extends State<SceneView> {
 
 class _AndroidViewSurface extends StatefulWidget {
   // Callback to pass controllers back
-  final Function(ARSceneController, ARSessionController)? onControllersReady;
+  final Function(ARSessionController, SceneViewController)? onControllersReady;
 
   const _AndroidViewSurface({this.onControllersReady});
 
@@ -180,13 +183,21 @@ class _AndroidViewSurfaceState extends State<_AndroidViewSurface> {
   }
 
   Future<void> onPlatformViewCreated(int id) async {
-    final controller = await ARSceneController.init(
+    @Deprecated('Will be removed in future in favor of node channel')
+    final nodeController = await ARSceneController.init(
       sceneId: id,
       arViewKey: _arViewKey,
     );
+
+    @Deprecated('Will be removed in future in favor of session channel')
     final sessionController = await ARSessionController.init(sceneId: id);
 
+    final controller = await SceneViewController.init(
+      sceneId: id,
+      arViewKey: _arViewKey,
+    );
+
     // Pass controllers back via callback
-    widget.onControllersReady?.call(controller, sessionController);
+    widget.onControllersReady?.call(sessionController, controller);
   }
 }

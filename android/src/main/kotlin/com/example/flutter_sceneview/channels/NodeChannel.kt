@@ -7,9 +7,11 @@ import androidx.lifecycle.LifecycleOwner
 import com.example.flutter_sceneview.logs.NodeError
 import com.example.flutter_sceneview.models.nodes.*
 import com.example.flutter_sceneview.models.render.RenderInfo
+import com.example.flutter_sceneview.results.ARResult
 import com.example.flutter_sceneview.utils.AssetLoader
 import com.example.flutter_sceneview.utils.BitmapUtils
 import com.example.flutter_sceneview.utils.Channels
+import com.example.flutter_sceneview.utils.findNodeByName
 import com.google.ar.core.Plane
 import com.google.ar.core.TrackingState
 import dev.romainguy.kotlin.math.Float3
@@ -22,6 +24,7 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.github.sceneview.ar.ARSceneView
 import io.github.sceneview.ar.arcore.createAnchorOrNull
 import io.github.sceneview.ar.arcore.rotation
+import io.github.sceneview.ar.node.AnchorNode
 import io.github.sceneview.math.Position
 import io.github.sceneview.math.Transform
 import io.github.sceneview.model.Model
@@ -72,6 +75,12 @@ class NodeChannel(
             "addTextNode" -> mainScope.launch { addTextNode(call.arguments as Map<*, *>, result) }
             "removeNode" -> mainScope.launch { removeNode(call.arguments as Map<*, *>, result) }
             "removeAllNodes" -> mainScope.launch { removeAllNodes(result) }
+            "createAnchorNode" -> mainScope.launch {
+                createAnchorNode(
+                    call.arguments as Map<*, *>, result
+                )
+            }
+
             else -> result.notImplemented()
         }
     }
@@ -84,13 +93,14 @@ class NodeChannel(
         }
 
         val sceneNode = SceneNode.fromMap(args) ?: run {
-            val message =  NodeError.NodeInvalidData.format()
+            val message = NodeError.NodeInvalidData.format()
             Log.e(TAG, message)
             return result.error(NodeError.NodeInvalidData.code, message, null)
         }
 
         val node = buildNativeNode(sceneNode) ?: run {
-            var error = NodeError.ModelLoadFailed((sceneNode.config as ModelConfig).fileName!!, null)
+            var error =
+                NodeError.ModelLoadFailed((sceneNode.config as ModelConfig).fileName!!, null)
             val message = error.format(sceneNode.config)
             Log.e(TAG, message)
             return result.error(error.code, message, null)
@@ -104,12 +114,15 @@ class NodeChannel(
         )?.createAnchorOrNull()
 
         if (hitResultAnchor == null) {
-            val message = NodeError.NoSurfaceFound.format(sceneNode.position.x, sceneNode.position.y)
+            val message =
+                NodeError.NoSurfaceFound.format(sceneNode.position.x, sceneNode.position.y)
             Log.e(TAG, message)
             return result.error(NodeError.NoSurfaceFound.code, message, null)
         }
 
-        node.position = Position(hitResultAnchor.pose.tx(), hitResultAnchor.pose.ty(), hitResultAnchor.pose.tz())
+        node.position = Position(
+            hitResultAnchor.pose.tx(), hitResultAnchor.pose.ty(), hitResultAnchor.pose.tz()
+        )
         node.name = sceneNode.nodeId
         sceneView.addChildNode(node)
 
@@ -189,7 +202,9 @@ class NodeChannel(
             return result.error(NodeError.PlacementFailed.code, message, null)
         }
 
-        node.position = Position(hitResultAnchor.pose.tx(), hitResultAnchor.pose.ty(), hitResultAnchor.pose.tz())
+        node.position = Position(
+            hitResultAnchor.pose.tx(), hitResultAnchor.pose.ty(), hitResultAnchor.pose.tz()
+        )
         node.name = sceneNode.nodeId
         sceneView.addChildNode(node)
 
@@ -205,7 +220,7 @@ class NodeChannel(
     private fun removeNode(args: Map<*, *>, result: MethodChannel.Result) {
         val nodeId = args["nodeId"] as? String ?: ""
         try {
-            val targetNode = sceneView.childNodes.firstOrNull { it.name == nodeId }
+            val targetNode = sceneView.findNodeByName(nodeId)
             if (targetNode != null) {
                 sceneView.removeChildNode(targetNode)
                 Log.d(TAG, "Node with id $nodeId removed successfully from the scene")
@@ -247,18 +262,39 @@ class NodeChannel(
         }
     }
 
+    private suspend fun addChildNode(args: Map<*, *>, result: MethodChannel.Result) {
+        try {
+            val parentNode = SceneNode.fromMap(args) ?: run {
+                val message = NodeError.NodeInvalidData.format()
+                Log.e(TAG, message)
+                return result.error(NodeError.NodeInvalidData.code, message, null)
+            }
+        } catch (e: Exception) {
+            val message = NodeError.RemoveAllFailed.format(e.message ?: "unknown")
+            Log.e(TAG, message)
+            result.error(NodeError.RemoveAllFailed.code, message, null)
+        }
+
+    }
 
 
     private suspend fun buildNativeNode(sceneNode: SceneNode): Node? {
         return when (sceneNode.type) {
             NodeType.MODEL -> {
                 val modelConfig = sceneNode.config as? ModelConfig ?: return null
-                val fileName = modelConfig.fileName ?: return null
-                val model = preloadedModels[fileName] ?: loadModelFrom(fileName, false)
-                ?: loadModelFrom(null, true) ?: return null
+                val default = modelConfig.loadDefault == true
+                val fileName = if (default) assetLoader.defaultModel else modelConfig.fileName ?: ""
+
+                val model =
+                    preloadedModels[fileName] ?: loadModelFrom(fileName, default) ?: return null
+
                 preloadedModels[fileName] = model
-                ModelNode(modelInstance = modelLoader.createInstance(model) ?: return null, scaleToUnits = 0.5f)
+                ModelNode(
+                    modelInstance = modelLoader.createInstance(model) ?: return null,
+                    scaleToUnits = 0.5f
+                )
             }
+
             NodeType.SHAPE -> {
                 val shapeConfig = sceneNode.config as? ShapeConfig ?: return null
                 val material = shapeConfig.material ?: return null
@@ -270,6 +306,7 @@ class NodeChannel(
                 )
                 shapeConfig.shape?.toNode(engine, materialInstance)
             }
+
             NodeType.TEXT -> {
                 val textConfig = sceneNode.config as? TextConfig ?: return null
                 val text = textConfig.text ?: return null
@@ -289,15 +326,90 @@ class NodeChannel(
             }
 
 
-            else -> { return null}
+            else -> {
+                return null
+            }
         }
     }
 
 
+    private suspend fun createAnchorNode(args: Map<*, *>, result: MethodChannel.Result) {
+        try {
+            var x = (args["x"] as? Double)?.toFloat()
+            var y = (args["y"] as? Double)?.toFloat()
+            var normalize = (args["normalize"]) as? Boolean == true
 
-    //TODO: The anchor will serve as the point in the AR world to fix and update the child objects
-    // positions when the scene tracking session gets updates
-    private fun createAnchor() {
+            val sceneNode = SceneNode.fromMap(args) ?: run {
+                val message = NodeError.NodeInvalidData.format()
+                Log.e(TAG, message)
+                return result.error(NodeError.NodeInvalidData.code, message, null)
+            }
+
+            if (x == null || y == null) {
+                val message = NodeError.InvalidCoordinates(x, y).format()
+                Log.w(TAG, message)
+                return result.success(false)
+            }
+
+            //Move error logic to the normalize method
+            if (normalize && !(args["renderInfo"] as? Map<*, *>).isNullOrEmpty()) {
+                val renderInfo = RenderInfo.fromMap((args["renderInfo"] as? Map<*, *>)!!)
+
+                val (normalizedX, normalizedY) = normalizePoint(x, y, renderInfo) ?: run {
+                    val message = "Normalization failed"
+                    // NodeError.NodeInvalidData.format()
+                    Log.e(TAG, message)
+                    return result.error(NodeError.NodeInvalidData.code, message, null)
+                }
+                x = (normalizedX * sceneView.width).toFloat()
+                y = (normalizedY * sceneView.height).toFloat()
+            }
+
+            val node = buildNativeNode(sceneNode)
+            val hitResult = sceneView.hitTestAR(
+                xPx = x,
+                yPx = y,
+                point = true,
+                planeTypes = setOf(Plane.Type.HORIZONTAL_UPWARD_FACING, Plane.Type.VERTICAL)
+            )?.createAnchorOrNull()
+
+            if (node != null && hitResult != null) {
+                val anchor = AnchorNode(engine, hitResult)
+                anchor.apply {
+                    name = sceneNode.parentId
+                }
+
+                node.apply {
+                    name = sceneNode.nodeId
+                    parent = anchor
+                    sceneNode.rotation?.let { node.rotation = it }
+                    sceneNode.scale?.let { node.scale = it }
+                    position = Position(0f, 0f, 0f) // Aligns with the anchor
+                }
+                anchor.addChildNode(node)
+                sceneView.addChildNode(anchor)
+            } else {
+                //Use raw values top show messages, not values after normalization
+                val message = NodeError.NoSurfaceFound.format(x, y)
+                Log.e(TAG, message)
+                return result.error(NodeError.NoSurfaceFound.code, message, null)
+
+            }
+
+            val worldPosition =
+                Position(hitResult.pose.tx(), hitResult.pose.ty(), hitResult.pose.tz())
+            sceneNode.apply {
+                position = worldPosition
+                rotation = hitResult.pose.rotation
+                isPlaced = true
+            }
+
+            result.success(sceneNode.toMap())
+
+        } catch (e: Exception) {
+            Log.w(TAG, e.toString())
+            result.error("ANCHOR_ERROR", "Failed to create anchor", null)
+        }
 
     }
 
