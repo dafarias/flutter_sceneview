@@ -220,11 +220,13 @@ class SceneChannel(
                         result.success(byteArray)
                     }
                 } else {
+                    Log.w(TAG, "Failed snapshot, image created by the frame was null")
                     withContext(Dispatchers.Main) {
                         result.error("FAILED_SNAPSHOT_ERROR", "Image was null", null)
                     }
                 }
             } catch (e: Exception) {
+                Log.e(TAG, "Failed to create a scene snapshot: ${e.message}")
                 withContext(Dispatchers.Main) {
                     result.error("FAILED_SNAPSHOT_ERROR", e.message ?: "Unknown error", null)
                 }

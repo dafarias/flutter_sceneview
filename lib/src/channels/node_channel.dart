@@ -54,6 +54,15 @@ class NodeChannel {
     }
   }
 
+  Future<void> testMethod({bool ex = false}) async {
+    final args = <String, dynamic>{};
+    try {
+      await _channel.invokeMethod('testAnchor', args);
+    } catch (e) {
+      debugPrint(e.toString());
+    }
+  }
+
   Future<void> addNode({SceneNode? node, bool testPlacement = false}) async {
     final args = <String, dynamic>{};
     try {
@@ -97,16 +106,23 @@ class NodeChannel {
   Future<List<HitTestResult>> hitTest({
     required double x,
     required double y,
+    bool normalize = false,
+    bool withFrame = true,
   }) async {
     try {
       final args = <String, dynamic>{};
 
+      args['x'] = x;
+      args['y'] = y;
+
+      if (normalize) {
+        args['normalize'] = true;
+        args['renderInfo'] = SceneUtils.renderInfo?.toJson();
+      }
+
       final hitTestResultRaw = await _channel.invokeMethod<List<dynamic>?>(
         'performHitTest',
-        {
-          'x': x, 'y': y,
-          // 'renderInfo': SceneUtils.renderInfo?.toJson()
-        },
+        args,
       );
 
       final hitTestResult =
@@ -125,7 +141,7 @@ class NodeChannel {
     try {
       await _channel.invokeMethod('dispose', "sceneId");
     } catch (e) {
-      debugPrint('ARSceneController dispose error: $e');
+      debugPrint('NodeChannel dispose error: $e');
     }
     // _initialized = false;
   }

@@ -9,6 +9,7 @@ sealed class NodeError(val code: String, open val defaultMessage: String) {
     object NoSurfaceFound : NodeError("NO_SURFACE_FOUND", "No AR surface found at screen coordinates x=%.2f, y=%.2f")
     data class ModelLoadFailed(val fileName: String, val cause: String?) : NodeError("MODEL_LOAD_FAILED", "Failed to load model %s: %s")
     object NodeInstanceCreationFailed : NodeError("NODE_INSTANCE_CREATION_FAILED", "Failed to create instance for %s")
+    object NormalizationFailed : NodeError("NORMALIZATION_FAILED", "Failed to normalize the values %s")
 
     // AddShapeNode errors
     object NodeInvalidMaterial : NodeError("INVALID_MATERIAL", "Invalid material provided.")
@@ -24,4 +25,5 @@ sealed class NodeError(val code: String, open val defaultMessage: String) {
 
     // RemoveAllNodes errors
     object RemoveAllFailed : NodeError("REMOVE_ALL_FAILED", "Failed to remove all nodes from the scene: %s")
+    object AnchorDestroyFailed : NodeError("ANCHOR_DESTROY_FAILED", "Failed to destroy the anchor with id: %s")
 }
