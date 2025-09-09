@@ -9,8 +9,6 @@ import com.example.flutter_sceneview.utils.ColorUtils.Companion.listOfArgb
 import io.github.sceneview.material.kMaterialDefaultMetallic
 import io.github.sceneview.material.kMaterialDefaultReflectance
 import io.github.sceneview.material.kMaterialDefaultRoughness
-import io.github.sceneview.node.Node
-import kotlin.math.roundToInt
 
 
 class BaseMaterial(

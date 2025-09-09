@@ -10,6 +10,8 @@ part 'node_config.g.dart';
 @freezed
 abstract class NodeConfig with _$NodeConfig {
   @JsonSerializable(explicitToJson: true)
+  // if model is not empty, then the load default flag should be set
+  // automatically
   const factory NodeConfig.model({
     String? fileName,
     @Default(false) bool loadDefault,
@@ -30,6 +32,10 @@ abstract class NodeConfig with _$NodeConfig {
     Color textColor, // Default to white
     @Default(1.0) double size,
   }) = TextConfig;
+
+  const factory NodeConfig.anchor({String? anchorId}) = AnchorConfig;
+
+  const factory NodeConfig.unknown() = UnknownConfig;
 
   factory NodeConfig.fromJson(Map<String, dynamic> json) =>
       _$NodeConfigFromJson(json);

@@ -9,6 +9,7 @@ export './materials/base_material.dart';
 export './shapes/shape_type.dart';
 
 export 'nodes/hit_test_result.dart';
+export 'nodes/pose.dart';
 
 export 'session/session_event.dart';
 export 'session/tracking.dart';

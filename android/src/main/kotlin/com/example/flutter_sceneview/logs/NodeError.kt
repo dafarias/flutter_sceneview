@@ -11,7 +11,7 @@ sealed class NodeError(val code: String, open val defaultMessage: String) {
     object NodeInstanceCreationFailed : NodeError("NODE_INSTANCE_CREATION_FAILED", "Failed to create instance for %s")
     object NormalizationFailed : NodeError("NORMALIZATION_FAILED", "Failed to normalize the values %s")
 
-    // AddShapeNode errors
+    // errors
     object NodeInvalidMaterial : NodeError("INVALID_MATERIAL", "Invalid material provided.")
     object NodeInvalidShape : NodeError("INVALID_SHAPE", "Invalid shape data.")
     object PlacementFailed : NodeError("PLACEMENT_FAILED", "Could not place node: %s")
@@ -26,4 +26,9 @@ sealed class NodeError(val code: String, open val defaultMessage: String) {
     // RemoveAllNodes errors
     object RemoveAllFailed : NodeError("REMOVE_ALL_FAILED", "Failed to remove all nodes from the scene: %s")
     object AnchorDestroyFailed : NodeError("ANCHOR_DESTROY_FAILED", "Failed to destroy the anchor with id: %s")
+
+    //Add children errors
+    object FailedAddingChildren : NodeError("CHILDREN_NOT_ADDED", "No children were successfully added as child of %s")
+    object InvalidParentId : NodeError("ADD_CHILDREN_ID", "Parent ID {%s} is invalid")
+
 }

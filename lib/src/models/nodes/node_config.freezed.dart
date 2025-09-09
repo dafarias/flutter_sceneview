@@ -27,6 +27,14 @@ NodeConfig _$NodeConfigFromJson(
           return TextConfig.fromJson(
             json
           );
+                case 'anchor':
+          return AnchorConfig.fromJson(
+            json
+          );
+                case 'unknown':
+          return UnknownConfig.fromJson(
+            json
+          );
         
           default:
             throw CheckedFromJsonException(
@@ -85,13 +93,15 @@ extension NodeConfigPatterns on NodeConfig {
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( ModelConfig value)?  model,TResult Function( ShapeConfig value)?  shape,TResult Function( TextConfig value)?  text,required TResult orElse(),}){
+@optionalTypeArgs TResult maybeMap<TResult extends Object?>({TResult Function( ModelConfig value)?  model,TResult Function( ShapeConfig value)?  shape,TResult Function( TextConfig value)?  text,TResult Function( AnchorConfig value)?  anchor,TResult Function( UnknownConfig value)?  unknown,required TResult orElse(),}){
 final _that = this;
 switch (_that) {
 case ModelConfig() when model != null:
 return model(_that);case ShapeConfig() when shape != null:
 return shape(_that);case TextConfig() when text != null:
-return text(_that);case _:
+return text(_that);case AnchorConfig() when anchor != null:
+return anchor(_that);case UnknownConfig() when unknown != null:
+return unknown(_that);case _:
   return orElse();
 
 }
@@ -109,13 +119,15 @@ return text(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( ModelConfig value)  model,required TResult Function( ShapeConfig value)  shape,required TResult Function( TextConfig value)  text,}){
+@optionalTypeArgs TResult map<TResult extends Object?>({required TResult Function( ModelConfig value)  model,required TResult Function( ShapeConfig value)  shape,required TResult Function( TextConfig value)  text,required TResult Function( AnchorConfig value)  anchor,required TResult Function( UnknownConfig value)  unknown,}){
 final _that = this;
 switch (_that) {
 case ModelConfig():
 return model(_that);case ShapeConfig():
 return shape(_that);case TextConfig():
-return text(_that);case _:
+return text(_that);case AnchorConfig():
+return anchor(_that);case UnknownConfig():
+return unknown(_that);case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -132,13 +144,15 @@ return text(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( ModelConfig value)?  model,TResult? Function( ShapeConfig value)?  shape,TResult? Function( TextConfig value)?  text,}){
+@optionalTypeArgs TResult? mapOrNull<TResult extends Object?>({TResult? Function( ModelConfig value)?  model,TResult? Function( ShapeConfig value)?  shape,TResult? Function( TextConfig value)?  text,TResult? Function( AnchorConfig value)?  anchor,TResult? Function( UnknownConfig value)?  unknown,}){
 final _that = this;
 switch (_that) {
 case ModelConfig() when model != null:
 return model(_that);case ShapeConfig() when shape != null:
 return shape(_that);case TextConfig() when text != null:
-return text(_that);case _:
+return text(_that);case AnchorConfig() when anchor != null:
+return anchor(_that);case UnknownConfig() when unknown != null:
+return unknown(_that);case _:
   return null;
 
 }
@@ -155,12 +169,14 @@ return text(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String? fileName,  bool loadDefault)?  model,TResult Function(@BaseShapeConverter()  BaseShape? shape, @BaseMaterialConverter()  BaseMaterial? material)?  shape,TResult Function( String text,  String? fontFamily, @ColorConverter()  Color textColor,  double size)?  text,required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>({TResult Function( String? fileName,  bool loadDefault)?  model,TResult Function(@BaseShapeConverter()  BaseShape? shape, @BaseMaterialConverter()  BaseMaterial? material)?  shape,TResult Function( String text,  String? fontFamily, @ColorConverter()  Color textColor,  double size)?  text,TResult Function( String? anchorId)?  anchor,TResult Function()?  unknown,required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case ModelConfig() when model != null:
 return model(_that.fileName,_that.loadDefault);case ShapeConfig() when shape != null:
 return shape(_that.shape,_that.material);case TextConfig() when text != null:
-return text(_that.text,_that.fontFamily,_that.textColor,_that.size);case _:
+return text(_that.text,_that.fontFamily,_that.textColor,_that.size);case AnchorConfig() when anchor != null:
+return anchor(_that.anchorId);case UnknownConfig() when unknown != null:
+return unknown();case _:
   return orElse();
 
 }
@@ -178,12 +194,14 @@ return text(_that.text,_that.fontFamily,_that.textColor,_that.size);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String? fileName,  bool loadDefault)  model,required TResult Function(@BaseShapeConverter()  BaseShape? shape, @BaseMaterialConverter()  BaseMaterial? material)  shape,required TResult Function( String text,  String? fontFamily, @ColorConverter()  Color textColor,  double size)  text,}) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>({required TResult Function( String? fileName,  bool loadDefault)  model,required TResult Function(@BaseShapeConverter()  BaseShape? shape, @BaseMaterialConverter()  BaseMaterial? material)  shape,required TResult Function( String text,  String? fontFamily, @ColorConverter()  Color textColor,  double size)  text,required TResult Function( String? anchorId)  anchor,required TResult Function()  unknown,}) {final _that = this;
 switch (_that) {
 case ModelConfig():
 return model(_that.fileName,_that.loadDefault);case ShapeConfig():
 return shape(_that.shape,_that.material);case TextConfig():
-return text(_that.text,_that.fontFamily,_that.textColor,_that.size);case _:
+return text(_that.text,_that.fontFamily,_that.textColor,_that.size);case AnchorConfig():
+return anchor(_that.anchorId);case UnknownConfig():
+return unknown();case _:
   throw StateError('Unexpected subclass');
 
 }
@@ -200,12 +218,14 @@ return text(_that.text,_that.fontFamily,_that.textColor,_that.size);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String? fileName,  bool loadDefault)?  model,TResult? Function(@BaseShapeConverter()  BaseShape? shape, @BaseMaterialConverter()  BaseMaterial? material)?  shape,TResult? Function( String text,  String? fontFamily, @ColorConverter()  Color textColor,  double size)?  text,}) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>({TResult? Function( String? fileName,  bool loadDefault)?  model,TResult? Function(@BaseShapeConverter()  BaseShape? shape, @BaseMaterialConverter()  BaseMaterial? material)?  shape,TResult? Function( String text,  String? fontFamily, @ColorConverter()  Color textColor,  double size)?  text,TResult? Function( String? anchorId)?  anchor,TResult? Function()?  unknown,}) {final _that = this;
 switch (_that) {
 case ModelConfig() when model != null:
 return model(_that.fileName,_that.loadDefault);case ShapeConfig() when shape != null:
 return shape(_that.shape,_that.material);case TextConfig() when text != null:
-return text(_that.text,_that.fontFamily,_that.textColor,_that.size);case _:
+return text(_that.text,_that.fontFamily,_that.textColor,_that.size);case AnchorConfig() when anchor != null:
+return anchor(_that.anchorId);case UnknownConfig() when unknown != null:
+return unknown();case _:
   return null;
 
 }
@@ -466,5 +486,117 @@ as double,
 
 
 }
+
+/// @nodoc
+@JsonSerializable()
+
+class AnchorConfig implements NodeConfig {
+  const AnchorConfig({this.anchorId, final  String? $type}): $type = $type ?? 'anchor';
+  factory AnchorConfig.fromJson(Map<String, dynamic> json) => _$AnchorConfigFromJson(json);
+
+ final  String? anchorId;
+
+@JsonKey(name: 'type')
+final String $type;
+
+
+/// Create a copy of NodeConfig
+/// with the given fields replaced by the non-null parameter values.
+@JsonKey(includeFromJson: false, includeToJson: false)
+@pragma('vm:prefer-inline')
+$AnchorConfigCopyWith<AnchorConfig> get copyWith => _$AnchorConfigCopyWithImpl<AnchorConfig>(this, _$identity);
+
+@override
+Map<String, dynamic> toJson() {
+  return _$AnchorConfigToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is AnchorConfig&&(identical(other.anchorId, anchorId) || other.anchorId == anchorId));
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => Object.hash(runtimeType,anchorId);
+
+@override
+String toString() {
+  return 'NodeConfig.anchor(anchorId: $anchorId)';
+}
+
+
+}
+
+/// @nodoc
+abstract mixin class $AnchorConfigCopyWith<$Res> implements $NodeConfigCopyWith<$Res> {
+  factory $AnchorConfigCopyWith(AnchorConfig value, $Res Function(AnchorConfig) _then) = _$AnchorConfigCopyWithImpl;
+@useResult
+$Res call({
+ String? anchorId
+});
+
+
+
+
+}
+/// @nodoc
+class _$AnchorConfigCopyWithImpl<$Res>
+    implements $AnchorConfigCopyWith<$Res> {
+  _$AnchorConfigCopyWithImpl(this._self, this._then);
+
+  final AnchorConfig _self;
+  final $Res Function(AnchorConfig) _then;
+
+/// Create a copy of NodeConfig
+/// with the given fields replaced by the non-null parameter values.
+@pragma('vm:prefer-inline') $Res call({Object? anchorId = freezed,}) {
+  return _then(AnchorConfig(
+anchorId: freezed == anchorId ? _self.anchorId : anchorId // ignore: cast_nullable_to_non_nullable
+as String?,
+  ));
+}
+
+
+}
+
+/// @nodoc
+@JsonSerializable()
+
+class UnknownConfig implements NodeConfig {
+  const UnknownConfig({final  String? $type}): $type = $type ?? 'unknown';
+  factory UnknownConfig.fromJson(Map<String, dynamic> json) => _$UnknownConfigFromJson(json);
+
+
+
+@JsonKey(name: 'type')
+final String $type;
+
+
+
+@override
+Map<String, dynamic> toJson() {
+  return _$UnknownConfigToJson(this, );
+}
+
+@override
+bool operator ==(Object other) {
+  return identical(this, other) || (other.runtimeType == runtimeType&&other is UnknownConfig);
+}
+
+@JsonKey(includeFromJson: false, includeToJson: false)
+@override
+int get hashCode => runtimeType.hashCode;
+
+@override
+String toString() {
+  return 'NodeConfig.unknown()';
+}
+
+
+}
+
+
+
 
 // dart format on

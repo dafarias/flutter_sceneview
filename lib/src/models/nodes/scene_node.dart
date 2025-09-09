@@ -6,10 +6,10 @@ import 'package:flutter/foundation.dart';
 
 part 'scene_node.freezed.dart';
 part 'scene_node.g.dart';
-// Uuid().v4()
 
 @freezed
 abstract class SceneNode with _$SceneNode {
+
   @JsonSerializable(explicitToJson: true)
   const factory SceneNode({
     @Default("") String nodeId,
@@ -26,9 +26,19 @@ abstract class SceneNode with _$SceneNode {
 
   factory SceneNode.fromJson(Map<String, dynamic> json) =>
       _$SceneNodeFromJson(json);
+
+  bool get isEmpty => this == SceneNode.empty;
+
+  bool get isNotEmpty => this != SceneNode.empty;
+
+  static final empty = _SceneNode(
+    position: Vector3.zero(),
+    type: NodeType.unknown,
+    config: NodeConfig.unknown()
+  );
+  
 }
 
-// Converters (already defined, included here for completeness)
 class Vector3Converter
     implements JsonConverter<Vector3, Map<Object?, Object?>> {
   const Vector3Converter();

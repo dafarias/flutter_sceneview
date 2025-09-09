@@ -7,7 +7,6 @@ import androidx.lifecycle.LifecycleOwner
 import com.example.flutter_sceneview.logs.NodeError
 import com.example.flutter_sceneview.models.nodes.*
 import com.example.flutter_sceneview.models.render.RenderInfo
-import com.example.flutter_sceneview.results.ARResult
 import com.example.flutter_sceneview.utils.AssetLoader
 import com.example.flutter_sceneview.utils.BitmapUtils
 import com.example.flutter_sceneview.utils.Channels
@@ -38,6 +37,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlin.collections.get
 
 class NodeChannel(
     private val context: Context,
@@ -73,17 +73,14 @@ class NodeChannel(
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
-            ///TODO ADDS NODE TO THE SCENE WITH THE CURRENT PROPERTIES IT HAS
             "addNode" -> mainScope.launch { onAddNode(call.arguments as Map<*, *>, result) }
-            "addChildNodes" -> mainScope.launch {
-                addChildNodes(
-                    call.arguments as Map<*, *>, result
-                )
+            "addChildNode" -> mainScope.launch {
+                addChildNode(call.arguments as Map<*, *>, result)
             }
 
-            "addShapeNode" -> mainScope.launch { addShapeNode(call.arguments as Map<*, *>, result) }
-            "addTextNode" -> mainScope.launch { addTextNode(call.arguments as Map<*, *>, result) }
-            "performHitTest" -> mainScope.launch { hitTest(call.arguments as Map<*, *>, result) }
+            "addChildNodes" -> mainScope.launch {
+                addChildNodes(call.arguments as Map<*, *>, result)
+            }
 
             "removeNode" -> mainScope.launch { removeNode(call.arguments as Map<*, *>, result) }
             "removeAllNodes" -> mainScope.launch { removeAllNodes(result) }
@@ -93,7 +90,8 @@ class NodeChannel(
                 )
             }
 
-            "testAnchor" -> mainScope.launch { testAnchors(call.arguments as Map<*, *>, result) }
+            "detachAnchor" -> mainScope.launch { detachAnchor(call.arguments as Map<*, *>, result) }
+            "hitTest" -> mainScope.launch { hitTest(call.arguments as Map<*, *>, result) }
 
             else -> result.notImplemented()
         }
@@ -101,58 +99,43 @@ class NodeChannel(
 
 
     private suspend fun onAddNode(args: Map<*, *>, result: MethodChannel.Result) {
+        // Adds node to the scene as direct child of it
+        val nodeMap = (args["node"] as? Map<*, *>)
         if (sceneView.cameraNode.trackingState != TrackingState.TRACKING) {
             val message = NodeError.AddNodeNotTracking.format()
             Log.w(TAG, message)
             return result.error(NodeError.AddNodeNotTracking.code, message, null)
         }
 
-        val sceneNode = SceneNode.fromMap(args) ?: run {
+        val sceneNode = SceneNode.fromMap(nodeMap!!) ?: run {
             val message = NodeError.NodeInvalidData.format()
             Log.e(TAG, message)
             return result.error(NodeError.NodeInvalidData.code, message, null)
         }
 
         val node = buildNativeNode(sceneNode) ?: run {
-            var error =
-                NodeError.ModelLoadFailed((sceneNode.config as ModelConfig).fileName!!, null)
-            val message = error.format(sceneNode.config)
+            var error = NodeError.NodeInstanceCreationFailed
+            val message = error.format(sceneNode)
             Log.e(TAG, message)
             return result.error(error.code, message, null)
         }
 
-        val hitResultAnchor = sceneView.hitTestAR(
-            xPx = sceneNode.position.x,
-            yPx = sceneNode.position.y,
-            point = true,
-            planeTypes = setOf(Plane.Type.HORIZONTAL_UPWARD_FACING, Plane.Type.VERTICAL)
-        )?.createAnchorOrNull()
-
-        if (hitResultAnchor == null) {
-            val message =
-                NodeError.NoSurfaceFound.format(sceneNode.position.x, sceneNode.position.y)
-            Log.e(TAG, message)
-            return result.error(NodeError.NoSurfaceFound.code, message, null)
-        }
-
-        node.position = Position(
-            hitResultAnchor.pose.tx(), hitResultAnchor.pose.ty(), hitResultAnchor.pose.tz()
-        )
-        node.name = sceneNode.nodeId
         sceneView.addChildNode(node)
 
-        Log.i(TAG, "Node ${node.name} placed successfully")
-        val nodeInfo = NodeInfo(
-            nodeId = node.name!!,
-            position = node.position,
-            rotation = hitResultAnchor.pose.rotation,
+        sceneNode.apply {
+            position = node.worldPosition
+            rotation = node.rotation
             scale = node.scale
-        )
-        result.success(nodeInfo.toMap())
+            isPlaced = true
+        }
+
+        result.success(sceneNode.toMap())
     }
 
+    @Deprecated("Preserve to use the error messages to improve the buildNativeNode")
     private suspend fun addShapeNode(args: Map<*, *>, result: MethodChannel.Result) {
-        val sceneNode = SceneNode.fromMap(args) ?: run {
+        val nodeMap = (args["node"] as? Map<*, *>)
+        val sceneNode = SceneNode.fromMap(nodeMap!!) ?: run {
             val message = NodeError.NodeInvalidShape.format()
             Log.e(TAG, message)
             return result.error(NodeError.NodeInvalidShape.code, message, null)
@@ -163,24 +146,12 @@ class NodeChannel(
             Log.e(TAG, message)
             return result.error(NodeError.PlacementFailed.code, message, null)
         }
-
-        node.name = sceneNode.nodeId
-        node.position = sceneNode.position
-        sceneNode.rotation?.let { node.rotation = it }
-
-        sceneView.addChildNode(node)
-
-        val nodeInfo = NodeInfo(
-            nodeId = node.name!!,
-            position = node.position,
-            rotation = node.rotation,
-            scale = node.scale
-        )
-        result.success(nodeInfo.toMap())
     }
 
-    private suspend fun addTextNode(args: Map<*, *>, result: MethodChannel.Result) {
-        val sceneNode = SceneNode.fromMap(args) ?: run {
+    @Deprecated("Preserve to use the error messages to improve the buildNativeNode")
+    private fun addTextNode(args: Map<*, *>, result: MethodChannel.Result) {
+        val nodeMap = (args["node"] as? Map<*, *>)
+        val sceneNode = SceneNode.fromMap(nodeMap!!) ?: run {
             val message = NodeError.NodeInvalidData.format()
             Log.e(TAG, message)
             return result.error(NodeError.NodeInvalidData.code, message, null)
@@ -198,53 +169,125 @@ class NodeChannel(
             return result.error(NodeError.TextNodeMissingText.code, message, null)
         }
 
-        val node = buildNativeNode(sceneNode) ?: run {
-            val message = NodeError.NodeInstanceCreationFailed.format(sceneNode)
-            Log.e(TAG, message)
-            return result.error(NodeError.NodeInstanceCreationFailed.code, message, null)
-        }
-
-        val hitResultAnchor = sceneView.hitTestAR(
-            xPx = sceneNode.position.x,
-            yPx = sceneNode.position.y,
-            point = true,
-            planeTypes = setOf(Plane.Type.HORIZONTAL_UPWARD_FACING, Plane.Type.VERTICAL)
-        )?.createAnchorOrNull()
-
-        if (hitResultAnchor == null) {
-            val message = NodeError.PlacementFailed.format(sceneNode)
-            Log.e(TAG, message)
-            return result.error(NodeError.PlacementFailed.code, message, null)
-        }
-
-        node.position = Position(
-            hitResultAnchor.pose.tx(), hitResultAnchor.pose.ty(), hitResultAnchor.pose.tz()
-        )
-        node.name = sceneNode.nodeId
-        sceneView.addChildNode(node)
-
-        val nodeInfo = NodeInfo(
-            nodeId = node.name!!,
-            position = node.position,
-            rotation = node.rotation,
-            scale = node.scale
-        )
-        result.success(nodeInfo.toMap())
     }
 
-    private suspend fun addChildNodes(args: Map<*, *>, result: MethodChannel.Result) {
+    private suspend fun addChildNode(args: Map<*, *>, result: MethodChannel.Result) {
         try {
+            val childMap = (args["child"] as? Map<*, *>)
+            val parentId = (args["parentId"] as? String)
 
-            val parentNode = SceneNode.fromMap(args) ?: run {
-                val message = NodeError.NodeInvalidData.format()
-                Log.e(TAG, message)
-                return result.error(NodeError.NodeInvalidData.code, message, null)
+            if (childMap != null && parentId != null) {
+                val child = SceneNode.fromMap(childMap) ?: run {
+                    val message = NodeError.NodeInvalidData.format()
+                    Log.e(TAG, message)
+                    return result.error(NodeError.NodeInvalidData.code, message, null)
+                }
+
+                sceneView.findNodeByName(parentId)?.let { parent ->
+                    buildNativeNode(child)?.let { nativeNode ->
+                        parent.addChildNode(nativeNode)
+                        child.parentId = parentId
+                        child.isPlaced = true
+                        child.position = nativeNode.worldPosition
+                        child.rotation = nativeNode.rotation
+                        child.scale = nativeNode.scale
+                        nativeNode
+                    } ?: run {
+                        val message = NodeError.NodeInstanceCreationFailed.format(child)
+                        Log.e(TAG, message)
+                        return result.error(
+                            NodeError.NodeInstanceCreationFailed.code, message, null
+                        )
+                    }
+
+                    return result.success(child.toMap())
+                }
+                return result.error(
+                    NodeError.NodeNotFound(parentId).code, "Parent node '$parentId' not found", null
+                )
+            } else {
+                return result.error("CHILD_NOT_ADDED", "Child data or parent ID is invalid", null)
             }
 
         } catch (e: Exception) {
             val message = NodeError.RemoveAllFailed.format(e.message ?: "unknown")
             Log.e(TAG, message)
             result.error(NodeError.RemoveAllFailed.code, message, null)
+        }
+
+    }
+
+
+    private suspend fun addChildNodes(args: Map<*, *>, result: MethodChannel.Result) {
+        try {
+            val children = (args["children"] as? List<*>)
+            val parentId = (args["parentId"] as? String) ?: run {
+                val message = NodeError.InvalidParentId.format()
+                Log.e(TAG, message)
+                return result.error(NodeError.InvalidParentId.code, message, null)
+            }
+
+            if (children != null) {
+                val updatedSceneNodes = mutableListOf<SceneNode>()
+                val nativeNodes = mutableSetOf<Node>()
+
+                val parent = sceneView.findNodeByName(parentId) ?: run {
+                    val message = NodeError.NodeNotFound(parentId).format(parentId)
+                    Log.e(TAG, message)
+                    return result.error(NodeError.NodeNotFound(parentId).code, message, null)
+                }
+
+                val sceneNodes = children.mapNotNull {
+                    val child = SceneNode.fromMap(it as Map<*, *>) ?: run {
+                        val message = NodeError.NodeInvalidData.format()
+                        Log.e(TAG, message)
+                        return result.error(NodeError.NodeInvalidData.code, message, null)
+                    }
+                    child
+                }.toList()
+
+                if (sceneNodes.isEmpty()) {
+                    return result.error("CHILDREN_NOT_ADDED", "No valid children to add", null)
+                }
+
+                sceneNodes.forEach { child ->
+                    val nativeNode = buildNativeNode(child)
+                    if (nativeNode != null) {
+                        nativeNodes.add(nativeNode)
+                    } else {
+                        Log.e(TAG, "Failed to build native node for child: ${child.nodeId}")
+                    }
+                }
+
+                if (nativeNodes.isNotEmpty()) {
+                    parent.addChildNodes(nativeNodes)
+                    // Updates SceneNodes after successfully adding nodes
+                    nativeNodes.forEach { nativeNode ->
+                        val child = sceneNodes.find { it.nodeId == nativeNode.name }
+                        child?.let {
+                            it.parentId = parentId
+                            it.isPlaced = true
+                            it.position = nativeNode.worldPosition
+                            it.rotation = nativeNode.rotation
+                            it.scale = nativeNode.scale
+                            updatedSceneNodes.add(it)
+                        }
+                    }
+                }
+
+                return if (updatedSceneNodes.isNotEmpty()) {
+                    result.success(updatedSceneNodes.map { it.toMap() })
+                } else {
+                    val message = NodeError.FailedAddingChildren.format(parentId)
+                    Log.w(TAG, message)
+                    result.error(NodeError.FailedAddingChildren.code, message, null)
+                }
+            }
+
+        } catch (e: Exception) {
+            val message = NodeError.RemoveAllFailed.format(e.message ?: "unknown")
+            Log.e(TAG, message)
+            return result.error(NodeError.RemoveAllFailed.code, message, null)
         }
 
     }
@@ -258,8 +301,7 @@ class NodeChannel(
             var px = 0.0f
             var py = 0.0f
 
-
-            val sceneNode = SceneNode.fromMap(args) ?: run {
+            val sceneNode = SceneNode.fromMap((args["node"] as? Map<*, *>)!!) ?: run {
                 val message = NodeError.NodeInvalidData.format()
                 Log.e(TAG, message)
                 return result.error(NodeError.NodeInvalidData.code, message, null)
@@ -294,11 +336,10 @@ class NodeChannel(
                 }
 
                 node.apply {
-                    name = sceneNode.nodeId
                     parent = anchor
-                    sceneNode.rotation?.let { node.rotation = it }
-                    sceneNode.scale?.let { node.scale = it }
                     position = Position(0f, 0f, 0f) // Aligns with the anchor
+                    worldPosition =
+                        Position(hitResult.pose.tx(), hitResult.pose.ty(), hitResult.pose.tz())
                 }
                 anchor.addChildNode(node)
                 sceneView.addChildNode(anchor)
@@ -310,11 +351,10 @@ class NodeChannel(
 
             }
 
-            val worldPosition =
-                Position(hitResult.pose.tx(), hitResult.pose.ty(), hitResult.pose.tz())
             sceneNode.apply {
-                position = worldPosition
-                rotation = hitResult.pose.rotation
+                position = node.worldPosition
+                scale = node.scale
+                rotation = node.rotation
                 isPlaced = true
             }
 
@@ -327,12 +367,16 @@ class NodeChannel(
 
     }
 
+
     private fun removeNode(args: Map<*, *>, result: MethodChannel.Result) {
         val nodeId = args["nodeId"] as? String ?: ""
         try {
             val targetNode = sceneView.findNodeByName(nodeId)
             if (targetNode != null) {
                 sceneView.removeChildNode(targetNode)
+                if (targetNode is AnchorNode) {
+                    targetNode.destroy()
+                }
                 Log.d(TAG, "Node with id $nodeId removed successfully from the scene")
                 result.success(true)
             } else {
@@ -347,6 +391,7 @@ class NodeChannel(
         }
     }
 
+
     private fun removeAllNodes(result: MethodChannel.Result) {
         try {
             sceneView.clearChildNodes()
@@ -358,26 +403,6 @@ class NodeChannel(
         }
     }
 
-    private fun destroyAnchor(args: Map<*, *>, result: MethodChannel.Result) {
-        try {
-            val anchorId = args["nodeId"] as? String ?: ""
-            val anchorNode = sceneView.findNodeByName(anchorId)
-            if (anchorNode != null && anchorNode is AnchorNode) {
-                anchorNode.destroy()
-            }
-
-            // Right approach for anchors
-//                sceneView.removeChildNode(anchor) // removes it from the scene graph
-//                anchor.destroy()                  // releases ARCore + Node resources
-
-
-            result.success(true)
-        } catch (e: Exception) {
-            val message = NodeError.AnchorDestroyFailed.format(e.message ?: "unknown")
-            Log.e(TAG, message)
-            result.error(NodeError.AnchorDestroyFailed.code, message, null)
-        }
-    }
 
     fun transformNode(node: Node?) {
         try {
@@ -395,7 +420,8 @@ class NodeChannel(
 
 
     private suspend fun buildNativeNode(sceneNode: SceneNode): Node? {
-        return when (sceneNode.type) {
+        //TODO: Add better error handling so we can know the exact reason why a build failed
+        var node = when (sceneNode.type) {
             NodeType.MODEL -> {
                 val modelConfig = sceneNode.config as? ModelConfig ?: return null
                 val default = modelConfig.loadDefault == true
@@ -441,11 +467,18 @@ class NodeChannel(
                 )
             }
 
-
             else -> {
                 return null
             }
         }
+
+        node?.apply {
+            name = sceneNode.nodeId
+            position = sceneNode.position
+            rotation = sceneNode.rotation ?: rotation
+            scale = sceneNode.scale ?: scale
+        }
+        return node
     }
 
 
@@ -455,25 +488,28 @@ class NodeChannel(
             modelLoader.loadModel(assetPath)
         }
 
-    private fun testAnchors(args: Map<*, *>, result: MethodChannel.Result) {
 
-        print(sceneView.childNodes)
-        print(sceneView.frame?.updatedAnchors)
+    private fun detachAnchor(args: Map<*, *>, result: MethodChannel.Result) {
+        try {
+            val anchorId = args["anchorId"] as? String
+            if (anchorId.isNullOrEmpty()) {
+                return result.error(
+                    "DETACH_ANCHOR", "Anchor id is not valid. Null or empty: $anchorId", null
+                )
+            }
 
-        //            sceneView.frame.acquireCameraImage().
-//            sceneView.frame.updatedAnchors
-//            sceneView.addChildNodes()
-//            sceneView.addChildNode()
-        // Test with the flag and anchor node impl
-//            sceneView.removeChildNode()
-        //From the scene apparently
-//            sceneView.clearChildNodes()
-        // Difference between remove and clear
-//            sceneView.removeChildNodes()
+            sceneView.findNodeByName(anchorId)?.let {
+                if (it is AnchorNode) {
+                    sceneView.removeChildNode(it)
+                    it.destroy()
+                }
+                return result.success(true)
+            }
 
-
-        // Anchors have a special mechanism and need to be detached, not only removed like normal
-        // nodes
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to detach and destroy anchor")
+            return result.error("DETACH_ANCHOR", e.message, null)
+        }
 
     }
 
@@ -493,7 +529,6 @@ class NodeChannel(
     }
 
 
-    ///TODO: Fix for current API
     fun hitTest(args: Map<*, *>, result: MethodChannel.Result) {
         try {
             var x = (args["x"] as? Double)?.toFloat()
@@ -549,9 +584,21 @@ class NodeChannel(
                     return result.success(list)
                     Log.i("HitTestResult", "$list")
                 }
-            }
-            else {
-                val hitResult = hitTestWithAR(xPx, yPx)?.createAnchorOrNull()
+            } else {
+                val hitResult = hitTestWithAR(xPx, yPx)
+                if (hitResult != null) {
+                    list.add(
+                        HitTestResult(
+                            hitResult.distance, Pose(
+                                hitResult.hitPose.position,
+                                hitResult.hitPose.rotation,
+                                hitResult.hitPose.quaternion
+                            )
+                        ).toMap()
+                    )
+                    return result.success(list)
+                }
+
             }
 
         } catch (e: Exception) {

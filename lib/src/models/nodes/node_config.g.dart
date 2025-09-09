@@ -50,3 +50,17 @@ Map<String, dynamic> _$TextConfigToJson(TextConfig instance) =>
       'size': instance.size,
       'type': instance.$type,
     };
+
+AnchorConfig _$AnchorConfigFromJson(Map<String, dynamic> json) => AnchorConfig(
+  anchorId: json['anchorId'] as String?,
+  $type: json['type'] as String?,
+);
+
+Map<String, dynamic> _$AnchorConfigToJson(AnchorConfig instance) =>
+    <String, dynamic>{'anchorId': instance.anchorId, 'type': instance.$type};
+
+UnknownConfig _$UnknownConfigFromJson(Map<String, dynamic> json) =>
+    UnknownConfig($type: json['type'] as String?);
+
+Map<String, dynamic> _$UnknownConfigToJson(UnknownConfig instance) =>
+    <String, dynamic>{'type': instance.$type};

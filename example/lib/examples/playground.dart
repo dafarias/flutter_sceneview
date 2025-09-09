@@ -19,6 +19,7 @@ class _PlaygroundState extends State<Playground> {
   late final SceneViewController _controller;
 
   final List<Node> placedNodes = [];
+  final List<SceneNode> nodes = [];
 
   @override
   void initState() {
@@ -76,8 +77,9 @@ class _PlaygroundState extends State<Playground> {
             children: <Widget>[
               ElevatedButton(
                 onPressed: () {
-                  // checkEvents();
-                  removeById(nodeId: placedNodes.firstOrNull?.nodeId ?? "");
+                  final id = nodes.first.parentId;
+                  removeById(nodeId: id ?? "");
+                  // detachAnchor(anchorId: id ?? "");
                 },
                 child: Text('Remove by id'),
               ),
@@ -88,7 +90,9 @@ class _PlaygroundState extends State<Playground> {
               SizedBox(width: 20),
 
               ElevatedButton(
-                onPressed: _handleHitTest,
+                onPressed: () {
+                  createAnchor();
+                },
                 child: Text('Hit test'),
               ),
             ],
@@ -98,19 +102,34 @@ class _PlaygroundState extends State<Playground> {
     );
   }
 
-  void placeNode() async {
-    // _controller.node.addNode(fileName: fileName, x: x, y: y, renderInfo: renderInfo)
+  void placeNode({
+    bool toRoot = false,
+    bool asChild = false,
+    bool asChildren = false,
+  }) async {
+    final results = await hitTest();
 
-    final node = await _flutterSceneviewPlugin.addNode(
-      x: 200,
-      y: 600,
-      fileName: 'models/golf_flag.glb',
+    if (results.isNotEmpty) {
+      if (toRoot) addNode(pose: results.first.pose);
+      if (asChild) addChild(pose: results.first.pose);
+      if (asChildren) addChildren(pose: results.first.pose);
+    }
+  }
+
+  void addNode({required Pose pose}) async {
+    final node = await _controller.node.addNode(
+      node: SceneNode(
+        position: pose.position,
+        rotation: pose.rotation,
+        type: NodeType.shape,
+        config: NodeConfig.shape(
+          shape: BaseShape.sphere(radius: 0.1),
+          material: BaseMaterial(color: Colors.lightBlueAccent, metallic: 0.7),
+        ),
+      ),
     );
 
-    //Todo: Fix node placement and removal logic
-    if (node != null && node.isNotEmpty) {
-      placedNodes.add(node);
-    }
+    print(node);
   }
 
   void placeShapeNode(Vector3 position, Vector3 rotation) async {
@@ -131,46 +150,103 @@ class _PlaygroundState extends State<Playground> {
     _controller.node.removeNode(nodeId: nodeId);
   }
 
-  void onRemoveAll() {
+  void onRemoveAll() async {
+    // final snap = await _controller.scene.sceneSnapshot();
+    // print(snap);
     _controller.node.removeAllNodes();
   }
 
-  void _handleHitTest() async {
-    final node = SceneNode(
-      parentId: "anchor",
-      nodeId: "child",
-      position: Vector3.all(0),
-
-      //Annoying type, forgetting to change it is a pain
-      // type: NodeType.shape,
-      // config: NodeConfig.shape(
-      //   shape: BaseShape.torus(minorRadius: 0.1, majorRadius: 1),
-      //   material: BaseMaterial(color: Colors.lightGreenAccent),
-      // ),
-      type: NodeType.text,
-      config: NodeConfig.text(
-        text: 'Hola mundo',
-        textColor: Colors.indigoAccent,
-      ),
+  Future<List<HitTestResult>> hitTest({
+    double? x,
+    double? y,
+    bool normalize = true,
+  }) async {
+    final results = await _controller.node.hitTest(
+      x: x ?? 200,
+      y: y ?? 600,
+      normalize: normalize,
     );
 
+    if (results.isEmpty) {
+      debugPrint('[Flutter] No hit test results');
+      return [];
+    }
+
+    return results;
+  }
+
+  void createAnchor() async {
     //Node can be created on the call and received if creeation was successful
     final result = await _controller.node.createAnchorNode(
       x: 300,
       y: 400,
-      node: node,
+      node: SceneNode(
+        parentId: "anchor",
+        nodeId: "child/flag",
+        position: Vector3.all(0),
+
+        type: NodeType.model,
+        config: NodeConfig.model(fileName: 'models/golf_flag.glb'),
+      ),
       normalize: true,
     );
 
-    // final results = await _flutterSceneviewPlugin.performHitTest(500, 500);
+    if (result != null && result.isPlaced) {
+      nodes.add(result);
+    }
+  }
 
-    // if (results.isEmpty) {
-    //   print('[Flutter] No hit test results');
-    //   return;
-    // }
+  void detachAnchor({required String anchorId}) {
+    _controller.node.detachAnchor(anchorId: anchorId);
+  }
 
-    // final hitTestResult = results.first.pose;
-    // placeShapeNode(hitTestResult.position, hitTestResult.rotation);
+  void addChild({required Pose pose}) async {
+    final child = await _controller.node.addChildNode(
+      parentId: nodes.first.parentId ?? "",
+      child: SceneNode(
+        position: pose.position,
+        rotation: pose.rotation,
+        type: NodeType.shape,
+        config: NodeConfig.shape(
+          shape: BaseShape.sphere(radius: 0.1),
+          material: BaseMaterial(color: Colors.purpleAccent, metallic: 0.7),
+        ),
+      ),
+    );
+
+    debugPrint(child.toString());
+  }
+
+  void addChildren({required Pose pose}) async {
+    final children = await _controller.node.addChildNodes(
+      parentId: nodes.first.parentId ?? "",
+      children: [
+        SceneNode(
+          position: pose.position,
+          rotation: pose.rotation,
+          type: NodeType.shape,
+          config: NodeConfig.shape(
+            shape: BaseShape.sphere(radius: 0.1),
+            material: BaseMaterial(color: Colors.purpleAccent, metallic: 0.7),
+          ),
+        ),
+
+        SceneNode(
+          position: pose.position.clone()..add((Vector3(0.2, 1, -0.35))),
+          rotation: pose.rotation,
+          type: NodeType.shape,
+          config: NodeConfig.shape(
+            shape: BaseShape.torus(majorRadius: 0.5, minorRadius: 0.05),
+            material: BaseMaterial(
+              color: Colors.deepOrangeAccent,
+              metallic: 0.7,
+            ),
+          ),
+        ),
+      ],
+    );
+
+    debugPrint(children.toString());
   }
 
   void goToScene() {

@@ -23,10 +23,11 @@ fun Quaternion.toMap(): Map<String, Float> = mapOf(
     "x" to x, "y" to y, "z" to z, "w" to w
 )
 
+
 // consider adding a property to work with relative positioning
 data class SceneNode(
     val nodeId: String = UUID.randomUUID().toString(),
-    val parentId: String = UUID.randomUUID().toString(),
+    var parentId: String? = null,
     var position: Position,
     var rotation: Rotation? = null,
     var scale: Scale? = null,
@@ -68,27 +69,26 @@ data class SceneNode(
     companion object {
         fun fromMap(map: Map<*, *>): SceneNode? {
             try {
-                val nodeMap = map["node"] as? Map<*, *>
-                if (nodeMap.isNullOrEmpty()) {
+                if (map.isEmpty()) {
                     return null
                 }
 
-                val positionMap = nodeMap["position"] as? Map<*, *>
-                val rotationMap = nodeMap["rotation"] as? Map<*, *>
-                val scaleMap = nodeMap["scale"] as? Map<*, *>
+                val positionMap = map["position"] as? Map<*, *>
+                val rotationMap = map["rotation"] as? Map<*, *>
+                val scaleMap = map["scale"] as? Map<*, *>
 
                 val position = positionMap?.let { MathUtils.positionFromMap(it) } ?: return null
                 val rotation = rotationMap?.let { MathUtils.rotationFromMap(it) }
                 val scale = scaleMap?.let { MathUtils.scaleFromMap(it) }
 
                 val type = try {
-                    NodeType.valueOf((nodeMap["type"] as String).uppercase())
+                    NodeType.valueOf((map["type"] as String).uppercase())
                 } catch (e: IllegalArgumentException) {
                     NodeType.UNKNOWN
                 }
 
 
-                val configMap = nodeMap["config"] as? Map<*, *>
+                val configMap = map["config"] as? Map<*, *>
                 val config = when (type) {
                     NodeType.MODEL -> ModelConfig(
                         configMap?.get("fileName") as? String,
@@ -117,15 +117,15 @@ data class SceneNode(
                     }
                 }
 
-                return SceneNode(nodeId = (nodeMap["nodeId"] as? String).takeUnless { it.isNullOrEmpty() }
+                return SceneNode(nodeId = (map["nodeId"] as? String).takeUnless { it.isNullOrEmpty() }
                     ?: UUID.randomUUID().toString(),
-                    parentId = nodeMap["parentId"] as? String ?: UUID.randomUUID().toString(),
+                    parentId = map["parentId"] as? String,
                     position = position,
                     rotation = rotation,
                     scale = scale,
                     type = type,
                     config = config,
-                    isPlaced = nodeMap["isPlaced"] as? Boolean == true)
+                    isPlaced = map["isPlaced"] as? Boolean == true)
             } catch (e: Exception) {
                 Log.e("SceneNode", "Failed to deserialize: ${e.message}")
                 return null
