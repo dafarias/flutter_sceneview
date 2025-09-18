@@ -67,8 +67,7 @@ class NodeChannel(
 
     override fun onDestroy(owner: LifecycleOwner) {
         Log.i(TAG, "onDestroy")
-        _channel.setMethodCallHandler(null)
-        sceneView.lifecycle?.removeObserver(this)
+        dispose()
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
@@ -93,8 +92,23 @@ class NodeChannel(
             "detachAnchor" -> mainScope.launch { detachAnchor(call.arguments as Map<*, *>, result) }
             "hitTest" -> mainScope.launch { hitTest(call.arguments as Map<*, *>, result) }
 
+            "dispose" -> {
+                dispose()
+                result.success(true)
+                return
+            }
+
             else -> result.notImplemented()
         }
+    }
+
+    private fun dispose() {
+        _channel.setMethodCallHandler(null)
+        sceneView.lifecycle?.removeObserver(this)
+        // Clears cache to free memory
+        preloadedModels.clear()
+        // Unregister any other listeners or resources
+        Log.i(TAG, "NodeChannel disposed")
     }
 
 
@@ -631,5 +645,6 @@ class NodeChannel(
             return Pair((localX * sceneView.width).toFloat(), (localY * sceneView.height).toFloat())
         } else null
     }
+
 }
 

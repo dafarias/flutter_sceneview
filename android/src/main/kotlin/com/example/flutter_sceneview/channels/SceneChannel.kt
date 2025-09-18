@@ -5,7 +5,6 @@ import android.media.Image
 import android.util.Log
 import androidx.lifecycle.DefaultLifecycleObserver
 import androidx.lifecycle.LifecycleOwner
-import com.example.flutter_sceneview.ar.ARScene
 import com.example.flutter_sceneview.logs.NodeError
 import com.example.flutter_sceneview.models.materials.BaseMaterial
 import com.example.flutter_sceneview.models.nodes.*
@@ -70,8 +69,7 @@ class SceneChannel(
 
     override fun onDestroy(owner: LifecycleOwner) {
         Log.i(TAG, "onDestroy")
-        _channel.setMethodCallHandler(null)
-        sceneView.lifecycle?.removeObserver(this)
+        dispose()
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
@@ -80,8 +78,22 @@ class SceneChannel(
                 onTakeSnapshot(result)
                 return
             }
+
+            "dispose" -> {
+                dispose()
+                result.success(true)
+                return
+            }
+
             else -> result.notImplemented()
         }
+    }
+
+    private fun dispose() {
+        _channel.setMethodCallHandler(null)
+        sceneView.lifecycle?.removeObserver(this)
+        // Clear any scene-specific resources, e.g., environment settings or shaders
+        Log.i(TAG, "SceneChannel disposed")
     }
 
 

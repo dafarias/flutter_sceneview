@@ -78,4 +78,12 @@ abstract class FlutterSceneViewPlatform extends PlatformInterface {
   void dispose(int sceneId) {
     throw UnimplementedError('dispose() has not been implemented.');
   }
+
+  Future<ARCoreAvailability> checkARCoreStatus() {
+    throw UnimplementedError('checkARCoreStatus() has not been implemented.');
+  }
+
+  Future<ARCoreInstallStatus> requestARCoreInstall() {
+    throw UnimplementedError('requestARCoreInstall() has not been implemented.');
+  }
 }

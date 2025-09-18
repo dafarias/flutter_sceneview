@@ -8,7 +8,7 @@ import 'package:flutter_sceneview/src/utils/channels.dart';
 import 'package:flutter_sceneview/src/utils/scene_render.dart';
 
 class SceneViewController {
-  final int _sceneId;
+  final int _viewId;
   bool _isDisposed = false;
   bool _initialized = false;
 
@@ -21,20 +21,20 @@ class SceneViewController {
 
   static late SceneViewController instance;
 
-  SceneViewController._(this._sceneId, {required this.arViewKey}) {
+  SceneViewController._(this._viewId, {required this.arViewKey}) {
     //'${Channels.node}_$_sceneId
-    node = NodeChannel(MethodChannel(Channels.node));
-    scene = SceneChannel(MethodChannel(Channels.scene));
-    session = SessionChannel(MethodChannel(Channels.session));
-    view = ViewChannel(MethodChannel(Channels.view));
+    node = NodeChannel(MethodChannel(Channels.node), _viewId);
+    scene = SceneChannel(MethodChannel(Channels.scene), _viewId);
+    session = SessionChannel(MethodChannel(Channels.session), _viewId);
+    view = ViewChannel(MethodChannel(Channels.view), _viewId);
   }
 
   ///   Must be called before accessing [instance].
   static Future<SceneViewController> init({
-    required int sceneId,
+    required int viewId,
     required GlobalKey arViewKey,
   }) async {
-    final controller = SceneViewController._(sceneId, arViewKey: arViewKey);
+    final controller = SceneViewController._(viewId, arViewKey: arViewKey);
     instance = controller;
     await controller._init();
     return controller;
@@ -51,6 +51,10 @@ class SceneViewController {
 
   void dispose() {
     node.dispose();
+    scene.dispose();
+    session.dispose();
+    view.dispose();
+
     _isDisposed = true;
     _initialized = false;
     // Optionally clean up nodes, listeners, etc.

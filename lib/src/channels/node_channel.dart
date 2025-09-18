@@ -5,8 +5,9 @@ import 'package:flutter_sceneview/src/utils/scene_render.dart';
 
 class NodeChannel {
   final MethodChannel _channel;
+  final int viewId;
 
-  NodeChannel(this._channel);
+  NodeChannel(this._channel, [this.viewId = 0]);
 
   Future<SceneNode?> addNode({
     SceneNode? node,
@@ -215,7 +216,7 @@ class NodeChannel {
 
   Future<void> dispose() async {
     try {
-      await _channel.invokeMethod('dispose', "sceneId");
+      await _channel.invokeMethod('dispose', viewId);
     } catch (e) {
       debugPrint('NodeChannel dispose error: $e');
     }

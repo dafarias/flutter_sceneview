@@ -5,20 +5,13 @@ import android.util.Log
 import android.view.View
 import android.widget.FrameLayout
 import androidx.lifecycle.Lifecycle
-import com.example.flutter_sceneview.FlutterSceneViewPlugin
-import com.example.flutter_sceneview.ar.ARScene
-import com.example.flutter_sceneview.ar.SessionManager
 import com.example.flutter_sceneview.channels.NodeChannel
 import com.example.flutter_sceneview.channels.SceneChannel
 import com.example.flutter_sceneview.channels.SessionChannel
-import com.example.flutter_sceneview.controllers.ARController
-import com.example.flutter_sceneview.results.NodeResult
-import com.example.flutter_sceneview.results.ARResult
 import com.example.flutter_sceneview.utils.Channels
 import com.google.ar.core.Config
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterAssets
-import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
@@ -26,7 +19,6 @@ import io.flutter.plugin.platform.PlatformView
 import io.github.sceneview.ar.ARSceneView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 
 class SceneViewWrapper(
@@ -41,6 +33,7 @@ class SceneViewWrapper(
     }
 
     private var sceneView: ARSceneView
+
     private val _mainScope = CoroutineScope(Dispatchers.Main)
     private val _channel = MethodChannel(binding.binaryMessenger, Channels.VIEW)
 
@@ -56,8 +49,11 @@ class SceneViewWrapper(
 
     override fun getView(): View = sceneView
 
+
     override fun dispose() {
         Log.i(TAG, "dispose")
+        sceneView.clearChildNodes()
+        sceneView.destroy()
         _channel.setMethodCallHandler(null)
         // TODO: Enable after implementing disposal methods
 //        if (::sceneChannel.isInitialized) sceneChannel.let { /* cleanup logic  */ }
@@ -65,13 +61,14 @@ class SceneViewWrapper(
 //        if (::sessionManager.isInitialized) sessionManager.dispose() // Assume SessionManager has a dispose met
     }
 
+
     //TODO: Create DTO or Model class to send in the configuration params
     init {
+        _channel.setMethodCallHandler(this)
         try {
             Log.i(TAG, "init")
             sceneView = ARSceneView(context, sharedLifecycle = lifecycle)
             sceneView.apply {
-                //  Configure AR session settings
                 sessionConfiguration = { session, config ->
                     // Enable depth if supported on the device
                     config.depthMode =
@@ -82,38 +79,39 @@ class SceneViewWrapper(
                     config.instantPlacementMode = Config.InstantPlacementMode.LOCAL_Y_UP
                     config.lightEstimationMode = Config.LightEstimationMode.ENVIRONMENTAL_HDR
                 }
+
+                layoutParams = FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
+                )
+
+                planeRenderer.isEnabled = true
             }
 
-            sceneView.layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
+            // Initialize channels after sceneView is ready
+            nodeChannel = NodeChannel(
+                context, flutterAssets, _mainScope, binding.binaryMessenger, sceneView
             )
-
-            _channel.setMethodCallHandler(this)
-
-
-            // New channels API - WIP
-            nodeChannel =
-                NodeChannel(context, flutterAssets, _mainScope, binding.binaryMessenger, sceneView)
-
-            sceneChannel =
-                SceneChannel(context, flutterAssets, _mainScope, binding.binaryMessenger, sceneView)
-
+            sceneChannel = SceneChannel(
+                context, flutterAssets, _mainScope, binding.binaryMessenger, sceneView
+            )
             sessionChannel = SessionChannel(
                 context, flutterAssets, _mainScope, binding.binaryMessenger, sceneView
             )
 
+            // Enable environment in scene channel
+            sceneChannel.enableEnvironment()
+
         } catch (e: Exception) {
             Log.i(TAG, "Failed to init ARSceneView", e)
-            sceneView = ARSceneView(context)
             throw e // Re-throw to let the caller handle the failure
         }
-        //Consider calling or invoking the method directly from the method handler
-        sceneChannel.enableEnvironment()
     }
+
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
             "init" -> {
+                // if true then finish the initialization on init
                 result.success(null)
             }
 
@@ -125,4 +123,6 @@ class SceneViewWrapper(
             else -> result.notImplemented()
         }
     }
+
 }
+

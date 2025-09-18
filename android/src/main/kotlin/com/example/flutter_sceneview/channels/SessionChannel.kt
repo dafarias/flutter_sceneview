@@ -47,8 +47,7 @@ class SessionChannel(
 
     override fun onDestroy(owner: LifecycleOwner) {
         Log.i(TAG, "onDestroy")
-        _channel.setMethodCallHandler(null)
-        sceneView.lifecycle?.removeObserver(this)
+        dispose()
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
@@ -56,6 +55,12 @@ class SessionChannel(
             "trackSession" -> {
                 startMonitoring()
                 return result.success(true)
+            }
+
+            "dispose" -> {
+                dispose()
+                result.success(true)
+                return
             }
 
             else -> result.notImplemented()
@@ -126,6 +131,24 @@ class SessionChannel(
         } catch (e: Exception) {
             Log.e(TAG, "Failed to return session tracking event")
         }
+    }
+
+    private fun dispose() {
+        _channel.setMethodCallHandler(null)
+        sceneView.lifecycle?.removeObserver(this)
+
+        // Unregister listeners
+        sceneView.onFrame = null
+        sceneView.onTrackingFailureChanged = null
+
+        // Reset tracking state to prevent memory leaks
+        isTracking = false
+        stableTrackingFrames = 0
+        lastTrackingState = null
+        trackingFailure = null
+        lastCheckTime = 0L
+
+        Log.i(TAG, "SessionChannel disposed")
     }
 }
 

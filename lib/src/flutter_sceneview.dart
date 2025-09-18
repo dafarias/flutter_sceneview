@@ -58,4 +58,12 @@ class FlutterSceneView {
   Future<Uint8List> sceneSnapshot() {
     return FlutterSceneViewPlatform.instance.sceneSnapshot();
   }
+
+  Future<ARCoreAvailability> checkARCore() async {
+    return FlutterSceneViewPlatform.instance.checkARCoreStatus();
+  }
+
+  Future<ARCoreInstallStatus> requestARCoreInstall() async {
+    return FlutterSceneViewPlatform.instance.requestARCoreInstall();
+  }
 }

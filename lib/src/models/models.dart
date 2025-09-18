@@ -14,3 +14,5 @@ export 'nodes/pose.dart';
 export 'session/session_event.dart';
 export 'session/tracking.dart';
 export 'session/overlay_behavior.dart';
+
+export 'arcore/arcore_status.dart';

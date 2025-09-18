@@ -2,11 +2,14 @@ package com.example.flutter_sceneview
 
 import android.app.Activity
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import androidx.lifecycle.LifecycleOwner
 import com.example.flutter_sceneview.handlers.PermissionsHandler
 import com.example.flutter_sceneview.factory.ScenePlatformViewFactory
 import com.example.flutter_sceneview.utils.Channels
+import com.google.ar.core.ArCoreApk
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -108,6 +111,14 @@ class FlutterSceneViewPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, A
 
             "checkPermissions" -> handleCheckPermissions(result)
 
+            "checkARCoreStatus" -> {
+                handleCheckARCoreAvailability(result)
+            }
+
+            "requestARCoreInstall" -> {
+                handleRequestARCoreInstall(result)
+            }
+
             else -> {
                 result.notImplemented()
             }
@@ -143,6 +154,61 @@ class FlutterSceneViewPlugin : FlutterPlugin, MethodChannel.MethodCallHandler, A
 
         } catch (e: Exception) {
             Log.i(TAG, "Failure while requesting permissions", e)
+        }
+    }
+
+
+    private fun handleCheckARCoreAvailability(result: MethodChannel.Result) {
+        try {
+            val context = flutterPluginBinding?.applicationContext ?: run {
+                result.error("NO_CONTEXT", "Application context is null", null)
+                return
+            }
+
+            // This will never return UNKNOWN_CHECKING.
+            ArCoreApk.getInstance().checkAvailabilityAsync(context) { availability ->
+                val status = when (availability) {
+                    ArCoreApk.Availability.SUPPORTED_APK_TOO_OLD -> "supported_apk_too_old"
+                    ArCoreApk.Availability.SUPPORTED_INSTALLED -> "supported_installed"
+                    ArCoreApk.Availability.SUPPORTED_NOT_INSTALLED -> "supported_not_installed"
+                    ArCoreApk.Availability.UNKNOWN_CHECKING -> "unknown_checking"
+                    ArCoreApk.Availability.UNKNOWN_ERROR -> "unknown_error"
+                    ArCoreApk.Availability.UNKNOWN_TIMED_OUT -> "unknown_timed_out"
+                    ArCoreApk.Availability.UNSUPPORTED_DEVICE_NOT_CAPABLE -> "unsupported_device"
+                    else -> "unknown"
+                }
+
+                // Send result back to Flutter on the main thread.
+                Handler(Looper.getMainLooper()).post {
+                    result.success(mapOf("status" to status))
+                }
+            }
+        } catch (e: Exception) {
+            result.error("ARCORE_ERROR", "Failed to check ARCore", e.message)
+        }
+    }
+
+
+    private fun handleRequestARCoreInstall(result: MethodChannel.Result) {
+        try {
+            // Try to request install if needed. This must be called from the main thread.
+            val installStatus = ArCoreApk.getInstance().requestInstall(
+                activity, /* userRequestedInstall= */
+                true
+            )
+
+            val status = when (installStatus) {
+                ArCoreApk.InstallStatus.INSTALLED -> "installed"
+                ArCoreApk.InstallStatus.INSTALL_REQUESTED -> "install_requested"
+            }
+
+            result.success(mapOf("status" to status))
+        } catch (e: Exception) {
+            result.error(
+                "ARCORE_INSTALL_ERROR",
+                "Failed to request ARCore install: ${e.localizedMessage}",
+                null
+            )
         }
     }
 }

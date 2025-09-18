@@ -10,9 +10,6 @@ class MethodChannelFlutterSceneView extends FlutterSceneViewPlatform {
   @visibleForTesting
   final methodChannel = const MethodChannel('flutter_sceneview');
 
-  //Todo: Will be moved to its own method channel handler
-  final sceneChannel = const MethodChannel('ar_scene');
-
   @override
   Future<String?> getPlatformVersion() async {
     final version = await methodChannel.invokeMethod<String>(
@@ -77,11 +74,34 @@ class MethodChannelFlutterSceneView extends FlutterSceneViewPlatform {
     return await ARSceneController.instance.hitTest(x: x, y: y);
   }
 
+  @Deprecated('Method will be replaced by the scene handled method')
   @override
   Future<Uint8List> sceneSnapshot() async {
-    final imageBytes = await sceneChannel.invokeMethod<Uint8List>(
-      'takeSnapshot',
-    );
-    return imageBytes ?? Uint8List.fromList([]);
+    throw UnimplementedError('sceneSnapshot() has not been implemented.');
+  }
+
+  @override
+  Future<ARCoreAvailability> checkARCoreStatus() async {
+    final result = await methodChannel.invokeMethod('checkARCoreStatus');
+
+    var availability = ARCoreAvailability.unknownError;
+
+    if (result != null) {
+      final statusString = result['status'] as String;
+      availability = ARCoreAvailability.fromStatusString(statusString);
+    }
+
+    return availability;
+  }
+
+  @override
+  Future<ARCoreInstallStatus> requestARCoreInstall() async {
+    final result = await methodChannel.invokeMethod('requestARCoreInstall');
+    if (result != null) {
+      final statusString = result['status'] as String;
+      return  ARCoreInstallStatus.fromStatusString(statusString);
+    }
+
+    return ARCoreInstallStatus.installRequested;
   }
 }

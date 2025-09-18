@@ -82,6 +82,18 @@ class MockFlutterSceneviewPlatform
     // TODO: implement addTextNode
     throw UnimplementedError();
   }
+  
+  @override
+  Future<ARCoreAvailability> checkARCoreStatus() {
+    // TODO: implement checkARCore
+    throw UnimplementedError();
+  }
+  
+  @override
+  Future<ARCoreInstallStatus> requestARCoreInstall() {
+    // TODO: implement requestARCoreInstall
+    throw UnimplementedError();
+  }
 }
 
 void main() {

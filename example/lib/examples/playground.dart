@@ -14,8 +14,6 @@ class _PlaygroundState extends State<Playground> {
   String _platformVersion = 'Unknown';
   final _flutterSceneviewPlugin = FlutterSceneView();
 
-  late final ARSessionController _session;
-
   late final SceneViewController _controller;
 
   final List<Node> placedNodes = [];
@@ -59,8 +57,6 @@ class _PlaygroundState extends State<Playground> {
         body: Center(
           child: SceneView(
             onViewCreated: (controller) => _controller = controller,
-
-            sessionController: (session) => _session = session,
             overlayBehavior: OverlayBehavior.showAlwaysOnTrackingChanged,
           ),
         ),
@@ -257,7 +253,7 @@ class _PlaygroundState extends State<Playground> {
   }
 
   void checkEvents() {
-    _session.trackingEvents.listen((event) {
+    _controller.session.trackingEvents.listen((event) {
       debugPrint(event.toString());
     });
   }
