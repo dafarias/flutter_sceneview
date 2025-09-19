@@ -18,7 +18,10 @@ _SceneNode _$SceneNodeFromJson(Map<String, dynamic> json) => _SceneNode(
     json['scale'],
     const Vector3Converter().fromJson,
   ),
-  type: const NodeTypeConverter().fromJson(json['type'] as String),
+  type: _$JsonConverterFromJson<String, NodeType>(
+    json['type'],
+    const NodeTypeConverter().fromJson,
+  ),
   config: const NodeConfigConverter().fromJson(json['config'] as Map),
   isPlaced: json['isPlaced'] as bool? ?? false,
 );
@@ -36,7 +39,10 @@ Map<String, dynamic> _$SceneNodeToJson(_SceneNode instance) =>
         instance.scale,
         const Vector3Converter().toJson,
       ),
-      'type': const NodeTypeConverter().toJson(instance.type),
+      'type': _$JsonConverterToJson<String, NodeType>(
+        instance.type,
+        const NodeTypeConverter().toJson,
+      ),
       'config': const NodeConfigConverter().toJson(instance.config),
       'isPlaced': instance.isPlaced,
     };

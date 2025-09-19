@@ -15,7 +15,7 @@ T _$identity<T>(T value) => value;
 /// @nodoc
 mixin _$SceneNode implements DiagnosticableTreeMixin {
 
- String get nodeId; String? get parentId;@Vector3Converter() Vector3 get position;@Vector3Converter() Vector3? get rotation;@Vector3Converter() Vector3? get scale;@NodeTypeConverter() NodeType get type;@NodeConfigConverter() NodeConfig get config; bool get isPlaced;
+ String get nodeId; String? get parentId;@Vector3Converter() Vector3 get position;@Vector3Converter() Vector3? get rotation;@Vector3Converter() Vector3? get scale;@NodeTypeConverter() NodeType? get type;@NodeConfigConverter() NodeConfig get config; bool get isPlaced;
 /// Create a copy of SceneNode
 /// with the given fields replaced by the non-null parameter values.
 @JsonKey(includeFromJson: false, includeToJson: false)
@@ -54,7 +54,7 @@ abstract mixin class $SceneNodeCopyWith<$Res>  {
   factory $SceneNodeCopyWith(SceneNode value, $Res Function(SceneNode) _then) = _$SceneNodeCopyWithImpl;
 @useResult
 $Res call({
- String nodeId, String? parentId,@Vector3Converter() Vector3 position,@Vector3Converter() Vector3? rotation,@Vector3Converter() Vector3? scale,@NodeTypeConverter() NodeType type,@NodeConfigConverter() NodeConfig config, bool isPlaced
+ String nodeId, String? parentId,@Vector3Converter() Vector3 position,@Vector3Converter() Vector3? rotation,@Vector3Converter() Vector3? scale,@NodeTypeConverter() NodeType? type,@NodeConfigConverter() NodeConfig config, bool isPlaced
 });
 
 
@@ -71,15 +71,15 @@ class _$SceneNodeCopyWithImpl<$Res>
 
 /// Create a copy of SceneNode
 /// with the given fields replaced by the non-null parameter values.
-@pragma('vm:prefer-inline') @override $Res call({Object? nodeId = null,Object? parentId = freezed,Object? position = null,Object? rotation = freezed,Object? scale = freezed,Object? type = null,Object? config = null,Object? isPlaced = null,}) {
+@pragma('vm:prefer-inline') @override $Res call({Object? nodeId = null,Object? parentId = freezed,Object? position = null,Object? rotation = freezed,Object? scale = freezed,Object? type = freezed,Object? config = null,Object? isPlaced = null,}) {
   return _then(_self.copyWith(
 nodeId: null == nodeId ? _self.nodeId : nodeId // ignore: cast_nullable_to_non_nullable
 as String,parentId: freezed == parentId ? _self.parentId : parentId // ignore: cast_nullable_to_non_nullable
 as String?,position: null == position ? _self.position : position // ignore: cast_nullable_to_non_nullable
 as Vector3,rotation: freezed == rotation ? _self.rotation : rotation // ignore: cast_nullable_to_non_nullable
 as Vector3?,scale: freezed == scale ? _self.scale : scale // ignore: cast_nullable_to_non_nullable
-as Vector3?,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
-as NodeType,config: null == config ? _self.config : config // ignore: cast_nullable_to_non_nullable
+as Vector3?,type: freezed == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
+as NodeType?,config: null == config ? _self.config : config // ignore: cast_nullable_to_non_nullable
 as NodeConfig,isPlaced: null == isPlaced ? _self.isPlaced : isPlaced // ignore: cast_nullable_to_non_nullable
 as bool,
   ));
@@ -175,7 +175,7 @@ return $default(_that);case _:
 /// }
 /// ```
 
-@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String nodeId,  String? parentId, @Vector3Converter()  Vector3 position, @Vector3Converter()  Vector3? rotation, @Vector3Converter()  Vector3? scale, @NodeTypeConverter()  NodeType type, @NodeConfigConverter()  NodeConfig config,  bool isPlaced)?  $default,{required TResult orElse(),}) {final _that = this;
+@optionalTypeArgs TResult maybeWhen<TResult extends Object?>(TResult Function( String nodeId,  String? parentId, @Vector3Converter()  Vector3 position, @Vector3Converter()  Vector3? rotation, @Vector3Converter()  Vector3? scale, @NodeTypeConverter()  NodeType? type, @NodeConfigConverter()  NodeConfig config,  bool isPlaced)?  $default,{required TResult orElse(),}) {final _that = this;
 switch (_that) {
 case _SceneNode() when $default != null:
 return $default(_that.nodeId,_that.parentId,_that.position,_that.rotation,_that.scale,_that.type,_that.config,_that.isPlaced);case _:
@@ -196,7 +196,7 @@ return $default(_that.nodeId,_that.parentId,_that.position,_that.rotation,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String nodeId,  String? parentId, @Vector3Converter()  Vector3 position, @Vector3Converter()  Vector3? rotation, @Vector3Converter()  Vector3? scale, @NodeTypeConverter()  NodeType type, @NodeConfigConverter()  NodeConfig config,  bool isPlaced)  $default,) {final _that = this;
+@optionalTypeArgs TResult when<TResult extends Object?>(TResult Function( String nodeId,  String? parentId, @Vector3Converter()  Vector3 position, @Vector3Converter()  Vector3? rotation, @Vector3Converter()  Vector3? scale, @NodeTypeConverter()  NodeType? type, @NodeConfigConverter()  NodeConfig config,  bool isPlaced)  $default,) {final _that = this;
 switch (_that) {
 case _SceneNode():
 return $default(_that.nodeId,_that.parentId,_that.position,_that.rotation,_that.scale,_that.type,_that.config,_that.isPlaced);case _:
@@ -216,7 +216,7 @@ return $default(_that.nodeId,_that.parentId,_that.position,_that.rotation,_that.
 /// }
 /// ```
 
-@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String nodeId,  String? parentId, @Vector3Converter()  Vector3 position, @Vector3Converter()  Vector3? rotation, @Vector3Converter()  Vector3? scale, @NodeTypeConverter()  NodeType type, @NodeConfigConverter()  NodeConfig config,  bool isPlaced)?  $default,) {final _that = this;
+@optionalTypeArgs TResult? whenOrNull<TResult extends Object?>(TResult? Function( String nodeId,  String? parentId, @Vector3Converter()  Vector3 position, @Vector3Converter()  Vector3? rotation, @Vector3Converter()  Vector3? scale, @NodeTypeConverter()  NodeType? type, @NodeConfigConverter()  NodeConfig config,  bool isPlaced)?  $default,) {final _that = this;
 switch (_that) {
 case _SceneNode() when $default != null:
 return $default(_that.nodeId,_that.parentId,_that.position,_that.rotation,_that.scale,_that.type,_that.config,_that.isPlaced);case _:
@@ -231,7 +231,7 @@ return $default(_that.nodeId,_that.parentId,_that.position,_that.rotation,_that.
 
 @JsonSerializable(explicitToJson: true)
 class _SceneNode extends SceneNode with DiagnosticableTreeMixin {
-  const _SceneNode({this.nodeId = "", this.parentId = null, @Vector3Converter() required this.position, @Vector3Converter() this.rotation, @Vector3Converter() this.scale, @NodeTypeConverter() required this.type, @NodeConfigConverter() required this.config, this.isPlaced = false}): super._();
+  const _SceneNode({this.nodeId = "", this.parentId = null, @Vector3Converter() required this.position, @Vector3Converter() this.rotation, @Vector3Converter() this.scale, @NodeTypeConverter() this.type, @NodeConfigConverter() required this.config, this.isPlaced = false}): super._();
   factory _SceneNode.fromJson(Map<String, dynamic> json) => _$SceneNodeFromJson(json);
 
 @override@JsonKey() final  String nodeId;
@@ -239,7 +239,7 @@ class _SceneNode extends SceneNode with DiagnosticableTreeMixin {
 @override@Vector3Converter() final  Vector3 position;
 @override@Vector3Converter() final  Vector3? rotation;
 @override@Vector3Converter() final  Vector3? scale;
-@override@NodeTypeConverter() final  NodeType type;
+@override@NodeTypeConverter() final  NodeType? type;
 @override@NodeConfigConverter() final  NodeConfig config;
 @override@JsonKey() final  bool isPlaced;
 
@@ -282,7 +282,7 @@ abstract mixin class _$SceneNodeCopyWith<$Res> implements $SceneNodeCopyWith<$Re
   factory _$SceneNodeCopyWith(_SceneNode value, $Res Function(_SceneNode) _then) = __$SceneNodeCopyWithImpl;
 @override @useResult
 $Res call({
- String nodeId, String? parentId,@Vector3Converter() Vector3 position,@Vector3Converter() Vector3? rotation,@Vector3Converter() Vector3? scale,@NodeTypeConverter() NodeType type,@NodeConfigConverter() NodeConfig config, bool isPlaced
+ String nodeId, String? parentId,@Vector3Converter() Vector3 position,@Vector3Converter() Vector3? rotation,@Vector3Converter() Vector3? scale,@NodeTypeConverter() NodeType? type,@NodeConfigConverter() NodeConfig config, bool isPlaced
 });
 
 
@@ -299,15 +299,15 @@ class __$SceneNodeCopyWithImpl<$Res>
 
 /// Create a copy of SceneNode
 /// with the given fields replaced by the non-null parameter values.
-@override @pragma('vm:prefer-inline') $Res call({Object? nodeId = null,Object? parentId = freezed,Object? position = null,Object? rotation = freezed,Object? scale = freezed,Object? type = null,Object? config = null,Object? isPlaced = null,}) {
+@override @pragma('vm:prefer-inline') $Res call({Object? nodeId = null,Object? parentId = freezed,Object? position = null,Object? rotation = freezed,Object? scale = freezed,Object? type = freezed,Object? config = null,Object? isPlaced = null,}) {
   return _then(_SceneNode(
 nodeId: null == nodeId ? _self.nodeId : nodeId // ignore: cast_nullable_to_non_nullable
 as String,parentId: freezed == parentId ? _self.parentId : parentId // ignore: cast_nullable_to_non_nullable
 as String?,position: null == position ? _self.position : position // ignore: cast_nullable_to_non_nullable
 as Vector3,rotation: freezed == rotation ? _self.rotation : rotation // ignore: cast_nullable_to_non_nullable
 as Vector3?,scale: freezed == scale ? _self.scale : scale // ignore: cast_nullable_to_non_nullable
-as Vector3?,type: null == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
-as NodeType,config: null == config ? _self.config : config // ignore: cast_nullable_to_non_nullable
+as Vector3?,type: freezed == type ? _self.type : type // ignore: cast_nullable_to_non_nullable
+as NodeType?,config: null == config ? _self.config : config // ignore: cast_nullable_to_non_nullable
 as NodeConfig,isPlaced: null == isPlaced ? _self.isPlaced : isPlaced // ignore: cast_nullable_to_non_nullable
 as bool,
   ));

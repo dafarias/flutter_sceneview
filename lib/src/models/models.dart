@@ -1,4 +1,3 @@
-export './nodes/node.dart';
 export './nodes/scene_node.dart';
 
 export './nodes/node_type.dart';

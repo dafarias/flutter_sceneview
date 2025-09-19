@@ -16,8 +16,7 @@ class _PlaygroundState extends State<Playground> {
 
   late final SceneViewController _controller;
 
-  final List<Node> placedNodes = [];
-  final List<SceneNode> nodes = [];
+  final List<SceneNode> placedNodes = [];
 
   @override
   void initState() {
@@ -62,7 +61,7 @@ class _PlaygroundState extends State<Playground> {
         ),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
-            placeNode();
+            placeNode(toRoot: true);
           },
           child: Icon(Icons.place),
         ),
@@ -73,7 +72,7 @@ class _PlaygroundState extends State<Playground> {
             children: <Widget>[
               ElevatedButton(
                 onPressed: () {
-                  final id = nodes.first.parentId;
+                  final id = placedNodes.first.parentId;
                   removeById(nodeId: id ?? "");
                   // detachAnchor(anchorId: id ?? "");
                 },
@@ -103,7 +102,12 @@ class _PlaygroundState extends State<Playground> {
     bool asChild = false,
     bool asChildren = false,
   }) async {
-    final results = await hitTest();
+    final value = MediaQuery.of(context).size;
+    final results = await hitTest(
+      x: value.width / 2,
+      y: value.height / 2,
+      normalize: true,
+    );
 
     if (results.isNotEmpty) {
       if (toRoot) addNode(pose: results.first.pose);
@@ -117,28 +121,34 @@ class _PlaygroundState extends State<Playground> {
       node: SceneNode(
         position: pose.position,
         rotation: pose.rotation,
-        type: NodeType.shape,
         config: NodeConfig.shape(
           shape: BaseShape.sphere(radius: 0.1),
           material: BaseMaterial(color: Colors.lightBlueAccent, metallic: 0.7),
         ),
       ),
     );
+    if (node != null) {
+      placedNodes.add(node);
+    }
 
-    print(node);
+    debugPrint(node.toString());
   }
 
   void placeShapeNode(Vector3 position, Vector3 rotation) async {
-    final node = Node(position: position, rotation: rotation);
-    final material = BaseMaterial(color: Color.fromARGB(255, 255, 255, 255));
+    final node = SceneNode(
+      position: position,
+      rotation: rotation,
+      config: NodeConfig.shape(
+        material: BaseMaterial(color: Color.fromARGB(255, 255, 255, 255)),
+        shape: BaseShape.sphere(radius: 0.05),
+      ),
+    );
 
-    // The shape should not depend on the node to be created
-    final sphere = BaseShape.sphere(radius: 0.05);
-    final torus = BaseShape.torus(majorRadius: 2, minorRadius: 0.05);
-    final sphereNode = await _flutterSceneviewPlugin.addShapeNode(sphere);
+    final _ = BaseShape.torus(majorRadius: 2, minorRadius: 0.05);
+    final sphereNode = await _controller.node.addNode(node: node);
 
     if (sphereNode != null) {
-      placedNodes.add(node);
+      placedNodes.add(sphereNode);
     }
   }
 
@@ -147,8 +157,6 @@ class _PlaygroundState extends State<Playground> {
   }
 
   void onRemoveAll() async {
-    // final snap = await _controller.scene.sceneSnapshot();
-    // print(snap);
     _controller.node.removeAllNodes();
   }
 
@@ -172,7 +180,6 @@ class _PlaygroundState extends State<Playground> {
   }
 
   void createAnchor() async {
-    //Node can be created on the call and received if creeation was successful
     final result = await _controller.node.createAnchorNode(
       x: 300,
       y: 400,
@@ -180,15 +187,13 @@ class _PlaygroundState extends State<Playground> {
         parentId: "anchor",
         nodeId: "child/flag",
         position: Vector3.all(0),
-
-        type: NodeType.model,
         config: NodeConfig.model(fileName: 'models/golf_flag.glb'),
       ),
       normalize: true,
     );
 
     if (result != null && result.isPlaced) {
-      nodes.add(result);
+      placedNodes.add(result);
     }
   }
 
@@ -198,11 +203,10 @@ class _PlaygroundState extends State<Playground> {
 
   void addChild({required Pose pose}) async {
     final child = await _controller.node.addChildNode(
-      parentId: nodes.first.parentId ?? "",
+      parentId: placedNodes.first.parentId ?? "",
       child: SceneNode(
         position: pose.position,
         rotation: pose.rotation,
-        type: NodeType.shape,
         config: NodeConfig.shape(
           shape: BaseShape.sphere(radius: 0.1),
           material: BaseMaterial(color: Colors.purpleAccent, metallic: 0.7),
@@ -215,12 +219,11 @@ class _PlaygroundState extends State<Playground> {
 
   void addChildren({required Pose pose}) async {
     final children = await _controller.node.addChildNodes(
-      parentId: nodes.first.parentId ?? "",
+      parentId: placedNodes.first.parentId ?? "",
       children: [
         SceneNode(
           position: pose.position,
           rotation: pose.rotation,
-          type: NodeType.shape,
           config: NodeConfig.shape(
             shape: BaseShape.sphere(radius: 0.1),
             material: BaseMaterial(color: Colors.purpleAccent, metallic: 0.7),
@@ -230,7 +233,6 @@ class _PlaygroundState extends State<Playground> {
         SceneNode(
           position: pose.position.clone()..add((Vector3(0.2, 1, -0.35))),
           rotation: pose.rotation,
-          type: NodeType.shape,
           config: NodeConfig.shape(
             shape: BaseShape.torus(majorRadius: 0.5, minorRadius: 0.05),
             material: BaseMaterial(

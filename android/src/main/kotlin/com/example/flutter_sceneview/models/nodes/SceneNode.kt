@@ -81,14 +81,14 @@ data class SceneNode(
                 val rotation = rotationMap?.let { MathUtils.rotationFromMap(it) }
                 val scale = scaleMap?.let { MathUtils.scaleFromMap(it) }
 
-                val type = try {
-                    NodeType.valueOf((map["type"] as String).uppercase())
+
+                val configMap = map["config"] as? Map<*, *>
+                val type  = try {
+                    NodeType.valueOf(((configMap?.get("type") ?: "") as String).uppercase())
                 } catch (e: IllegalArgumentException) {
                     NodeType.UNKNOWN
                 }
 
-
-                val configMap = map["config"] as? Map<*, *>
                 val config = when (type) {
                     NodeType.MODEL -> ModelConfig(
                         configMap?.get("fileName") as? String,

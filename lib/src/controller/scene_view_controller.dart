@@ -21,6 +21,8 @@ class SceneViewController {
 
   static late SceneViewController instance;
 
+  bool get isDisposed => _isDisposed;
+
   SceneViewController._(this._viewId, {required this.arViewKey}) {
     //'${Channels.node}_$_sceneId
     node = NodeChannel(MethodChannel(Channels.node), _viewId);

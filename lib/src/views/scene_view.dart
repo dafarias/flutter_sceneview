@@ -29,7 +29,6 @@ class _SceneViewState extends State<SceneView> with WidgetsBindingObserver {
   bool _showOverlay = true;
   bool _hasTrackedOnce = false;
   bool _isReady = false;
-  bool _hasARCoreInstalled = false;
 
   Completer<SceneViewController> _controller = Completer<SceneViewController>();
 
@@ -44,6 +43,7 @@ class _SceneViewState extends State<SceneView> with WidgetsBindingObserver {
 
   // Remove or improve usage
   @Deprecated('The method should be removed or improve its usage')
+  // ignore: unused_element
   Future<bool> _checkViewRegistration() async {
     final isReady = await _sceneView.hasRegisteredView() ?? false;
     debugPrint('AR View registered: $isReady');
@@ -56,7 +56,6 @@ class _SceneViewState extends State<SceneView> with WidgetsBindingObserver {
       if (result) {
         setState(() {
           _hasPermission = true;
-          _hasARCoreInstalled = true;
         });
 
         _initializeView();
@@ -137,7 +136,6 @@ class _SceneViewState extends State<SceneView> with WidgetsBindingObserver {
     setState(() {
       _hasPermission = false;
       _isReady = false;
-      _hasARCoreInstalled = false;
       _controller = Completer<SceneViewController>();
     });
     _checkARCoreStatus();

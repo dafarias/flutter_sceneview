@@ -17,7 +17,7 @@ abstract class SceneNode with _$SceneNode {
     @Vector3Converter() required Vector3 position,
     @Vector3Converter() Vector3? rotation,
     @Vector3Converter() Vector3? scale,
-    @NodeTypeConverter() required NodeType type,
+    @NodeTypeConverter() NodeType? type,
     @NodeConfigConverter() required NodeConfig config,
     @Default(false) bool isPlaced,
   }) = _SceneNode;

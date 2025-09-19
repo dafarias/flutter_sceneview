@@ -25,59 +25,11 @@ class MethodChannelFlutterSceneView extends FlutterSceneViewPlatform {
   }
 
   @override
-  Future<Node?> addNode({double x = 0, double y = 0, String? fileName}) async {
-    return await ARSceneController.instance.addNode(
-      x: x,
-      y: y,
-      fileName: fileName,
-    );
-  }
-
-  @override
-  Future<Node?> addShapeNode(
-    BaseShape shape, {
-    double x = 0,
-    double y = 0,
-  }) async {
-    return await ARSceneController.instance.addShapeNode(shape);
-  }
-
-  @override
   Future<bool?> checkPermissions() async {
     final hasCameraPermissions = await methodChannel.invokeMethod<bool>(
       'checkPermissions',
     );
     return hasCameraPermissions;
-  }
-
-  @override
-  Future<Node?> addTextNode(
-    String text, {
-    double x = 0,
-    double y = 0,
-    double size = 1,
-    String? fontFamily,
-    bool normalize = false,
-  }) async {
-    return await ARSceneController.instance.addTextNode(
-      text,
-      x: x,
-      y: y,
-      size: size,
-      fontFamily: fontFamily,
-      normalize: normalize,
-    );
-  }
-
-  @override
-  Future<List<HitTestResult>> performHitTest(double x, double y) async {
-    return await ARSceneController.instance.hitTest(x: x, y: y);
-  }
-
-  @Deprecated('Method will be replaced by the scene handled method')
-  @override
-  Future<Uint8List> sceneSnapshot() async {
-    throw UnimplementedError('sceneSnapshot() has not been implemented.');
   }
 
   @override
