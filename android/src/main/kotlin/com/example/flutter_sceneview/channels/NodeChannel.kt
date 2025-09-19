@@ -83,6 +83,10 @@ class NodeChannel(
 
             "removeNode" -> mainScope.launch { removeNode(call.arguments as Map<*, *>, result) }
             "removeAllNodes" -> mainScope.launch { removeAllNodes(result) }
+            "getAllNodes" -> {
+                getAllNodes(result)
+            }
+
             "createAnchorNode" -> mainScope.launch {
                 createAnchorNode(
                     call.arguments as Map<*, *>, result
@@ -387,7 +391,7 @@ class NodeChannel(
         try {
             val targetNode = sceneView.findNodeByName(nodeId)
             if (targetNode != null) {
-                sceneView.removeChildNode(targetNode)
+                targetNode.parent?.removeChildNode(targetNode)
                 if (targetNode is AnchorNode) {
                     targetNode.destroy()
                 }
@@ -414,6 +418,31 @@ class NodeChannel(
             val message = NodeError.RemoveAllFailed.format(e.message ?: "unknown")
             Log.e(TAG, message)
             result.error(NodeError.RemoveAllFailed.code, message, null)
+        }
+    }
+
+    private fun getAllNodes(result: MethodChannel.Result) {
+        try {
+            //TODO: Special recreation of the nodes to send them back. Needs to be looked at
+            val nodes = sceneView.childNodes.map { node ->
+                SceneNode(
+                    nodeId = node.name!!,
+                    position = node.position,
+                    rotation = node.rotation,
+                    scale = node.scale,
+                    type = NodeType.UNKNOWN,
+                    config = ModelConfig()
+                )
+            }
+
+            val nodesList = ArrayList(nodes.map { it.toMap() })
+
+            result.success(nodesList)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to retrieve all nodes from the scene")
+            result.error(
+                "GET_ALL_NODES_ERROR", e.message ?: "Unknown error", e.stackTraceToString()
+            )
         }
     }
 

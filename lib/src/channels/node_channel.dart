@@ -214,6 +214,26 @@ class NodeChannel {
     }
   }
 
+  Future<List<SceneNode>> getAllNodes() async {
+    try {
+      final nodesRaw = await _channel.invokeMethod<List<dynamic>>(
+        'getAllNodes',
+      );
+
+      final nodes =
+          nodesRaw
+              ?.map(
+                (item) => SceneNode.fromJson(Map<String, dynamic>.from(item)),
+              )
+              .toList() ??
+          [];
+      return nodes;
+    } catch (e) {
+      debugPrint(e.toString());
+      return [];
+    }
+  }
+
   Future<void> dispose() async {
     try {
       await _channel.invokeMethod('dispose', viewId);

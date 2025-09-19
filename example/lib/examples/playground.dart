@@ -3,14 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_sceneview/flutter_sceneview.dart';
 import 'package:vector_math/vector_math_64.dart' hide Sphere, Colors;
 
-class Playground extends StatefulWidget {
-  const Playground({super.key});
+class PlaygroundScreen extends StatefulWidget {
+  const PlaygroundScreen({super.key});
 
   @override
-  State<Playground> createState() => _PlaygroundState();
+  State<PlaygroundScreen> createState() => _PlaygroundScreenState();
 }
 
-class _PlaygroundState extends State<Playground> {
+class _PlaygroundScreenState extends State<PlaygroundScreen> {
   String _platformVersion = 'Unknown';
   final _flutterSceneviewPlugin = FlutterSceneView();
 
@@ -59,38 +59,67 @@ class _PlaygroundState extends State<Playground> {
             overlayBehavior: OverlayBehavior.showAlwaysOnTrackingChanged,
           ),
         ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            placeNode(toRoot: true);
-          },
-          child: Icon(Icons.place),
-        ),
+        bottomSheet: Container(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+          ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final maxWidth = constraints.maxWidth;
 
-        bottomSheet: SizedBox(
-          height: 60,
-          child: Row(
-            children: <Widget>[
-              ElevatedButton(
-                onPressed: () {
-                  final id = placedNodes.first.parentId;
-                  removeById(nodeId: id ?? "");
-                  // detachAnchor(anchorId: id ?? "");
-                },
-                child: Text('Remove by id'),
-              ),
+              const spacing = 12.0;
+              final buttonWidth = (maxWidth - (spacing * 2)) / 3;
 
-              SizedBox(width: 20),
-
-              ElevatedButton(onPressed: onRemoveAll, child: Text('Remove all')),
-              SizedBox(width: 20),
-
-              ElevatedButton(
-                onPressed: () {
-                  createAnchor();
-                },
-                child: Text('Hit test'),
-              ),
-            ],
+              return Wrap(
+                spacing: spacing,
+                runSpacing: spacing,
+                children: [
+                  SizedBox(
+                    width: buttonWidth,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        removeById(
+                          nodeId: placedNodes.firstOrNull?.parentId ?? "",
+                        );
+                      },
+                      child: const Text('Remove by id'),
+                    ),
+                  ),
+                  SizedBox(
+                    width: buttonWidth,
+                    child: ElevatedButton(
+                      onPressed: onRemoveAll,
+                      child: const Text('Remove all'),
+                    ),
+                  ),
+                  SizedBox(
+                    width: buttonWidth,
+                    child: ElevatedButton(
+                      onPressed: getAllNodes,
+                      child: const Text('Get all'),
+                    ),
+                  ),
+                  SizedBox(
+                    width: buttonWidth,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        placeNode(toRoot: true);
+                      },
+                      child: const Text('Hit test'),
+                    ),
+                  ),
+                  SizedBox(
+                    width: buttonWidth,
+                    child: ElevatedButton(
+                      onPressed: createAnchor,
+                      child: const Icon(Icons.flag),
+                    ),
+                  ),
+                ],
+              );
+            },
           ),
         ),
       ),
@@ -158,6 +187,17 @@ class _PlaygroundState extends State<Playground> {
 
   void onRemoveAll() async {
     _controller.node.removeAllNodes();
+  }
+
+  void getAllNodes() async {
+    final nodes = await _controller.node.getAllNodes();
+    debugPrint('Nodes on scene [${nodes.length}]:');
+
+    for (final node in nodes) {
+      debugPrint(
+        '${node.nodeId}: ${node.position} | ${node.rotation} | ${node.scale}',
+      );
+    }
   }
 
   Future<List<HitTestResult>> hitTest({

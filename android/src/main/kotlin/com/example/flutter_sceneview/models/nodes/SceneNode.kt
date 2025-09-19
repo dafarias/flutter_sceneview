@@ -83,7 +83,7 @@ data class SceneNode(
 
 
                 val configMap = map["config"] as? Map<*, *>
-                val type  = try {
+                val type = try {
                     NodeType.valueOf(((configMap?.get("type") ?: "") as String).uppercase())
                 } catch (e: IllegalArgumentException) {
                     NodeType.UNKNOWN
