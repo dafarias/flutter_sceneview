@@ -42,8 +42,9 @@ flutter:
   plugin:
     platforms:
       android:
+      # Change package name after all pending changes to make it prod ready
         package: com.example.flutter_sceneview
-        pluginClass: FlutterSceneviewPlugin
+        pluginClass: FlutterSceneViewPlugin
 
   # To add assets to your plugin package, add an assets section, like this:
   assets:

@@ -1,34 +1,61 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_sceneview/src/models/materials/base_material.dart';
-import 'package:flutter_sceneview/src/models/nodes/node.dart';
-import 'package:flutter_sceneview/src/models/shapes/shapes.dart';
+import 'package:flutter_sceneview/src/models/shapes/shape_type.dart';
+import 'package:freezed_annotation/freezed_annotation.dart';
 
-abstract class BaseShape {
-  BaseShape(this.node, {required BaseMaterial material})
-    : material = ValueNotifier(material);
+part 'base_shape.freezed.dart';
+part 'base_shape.g.dart';
 
-  final ValueNotifier<BaseMaterial> material;
-  //Todo: I dont think the shape should depend on the node impl. In any case,
-  // it could be the other way aroud. A node could be a shape node, and if it happens
-  // then it should have a shape attached to it
-  final Node node;
+@Freezed(unionKey: 'shapeType')
+@freezed
+abstract class BaseShape with _$BaseShape {
+  @JsonSerializable(explicitToJson: true)
+  const factory BaseShape.generic({
+    @ShapeTypeConverter() @Default(ShapeType.unknown) ShapeType shapeType,
+  }) = GenericShape;
 
-  Shapes get shapeType;
+  @JsonSerializable(explicitToJson: true)
+  const factory BaseShape.sphere({
+    @ShapeTypeConverter() @Default(ShapeType.sphere) ShapeType shapeType,
+    @Default(0.5) double radius,
+  }) = SphereShape;
 
-  Map<String, dynamic> toMap() => <String, dynamic>{
-    'shapeType': shapeType.toUpper,
-    'material': material.value.toMap(),
-    'nodeId': node.nodeId,
-    'position': {
-      'x': node.position.x,
-      'y': node.position.y,
-      'z': node.position.z,
-    },
-    'rotation': {
-      'x': node.rotation?.x,
-      'y': node.rotation?.y,
-      'z': node.rotation?.z,
-    },
-    'scale': node.scale,
-  }..removeWhere((String k, dynamic v) => v == null);
+  @JsonSerializable(explicitToJson: true)
+  const factory BaseShape.torus({
+    @ShapeTypeConverter() @Default(ShapeType.torus) ShapeType shapeType,
+    @Default(0.5) double majorRadius,
+    @Default(0.1) double minorRadius,
+  }) = TorusShape;
+
+  @JsonSerializable(explicitToJson: true)
+  const factory BaseShape.cube({
+    @ShapeTypeConverter() @Default(ShapeType.cube) ShapeType shapeType,
+    @Default(1.0) double size,
+    @Default(0.1) double dx,
+    @Default(0.1) double dy,
+    @Default(0) double center,
+  }) = CubeShape;
+
+  factory BaseShape.fromJson(Map<String, dynamic> json) =>
+      _$BaseShapeFromJson(json);
+}
+
+class BaseShapeConverter implements JsonConverter<BaseShape?, Object?> {
+  const BaseShapeConverter();
+
+  @override
+  BaseShape? fromJson(Object? json) {
+    if (json == null) {
+      throw ArgumentError('Expected non-null JSON for BaseShape');
+    }
+    if (json is! Map) {
+      throw ArgumentError(
+        'Expected a Map for BaseShape but got ${json.runtimeType}',
+      );
+    }
+    return _$BaseShapeFromJson(Map<String, dynamic>.from(json));
+  }
+
+  @override
+  Map<String, dynamic>? toJson(BaseShape? object) {
+    return object?.toJson();
+  }
 }

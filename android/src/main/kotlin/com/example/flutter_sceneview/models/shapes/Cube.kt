@@ -23,7 +23,9 @@ class Cube(
 
     override fun toMap(): Map<String, Any?> {
         return mapOf(
-            "shapeType" to shapeType.name,
+            "shapeType" to shapeType.name.lowercase(),
+
+            //Fix return types for cube on Dart side
             "size" to listOf(size.x, size.y, size.z),
             "center" to listOf(center.x, center.y, center.z)
         )

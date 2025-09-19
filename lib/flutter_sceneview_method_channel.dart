@@ -4,14 +4,11 @@ import 'package:flutter_sceneview/flutter_sceneview.dart';
 
 import 'flutter_sceneview_platform_interface.dart';
 
-/// An implementation of [FlutterSceneviewPlatform] that uses method channels.
-class MethodChannelFlutterSceneview extends FlutterSceneviewPlatform {
+/// An implementation of [FlutterSceneViewPlatform] that uses method channels.
+class MethodChannelFlutterSceneView extends FlutterSceneViewPlatform {
   /// The method channel used to interact with the native platform.
   @visibleForTesting
   final methodChannel = const MethodChannel('flutter_sceneview');
-
-  //Todo: Will be moved to its own method channel handler
-  final sceneChannel = const MethodChannel('ar_scene');
 
   @override
   Future<String?> getPlatformVersion() async {
@@ -28,32 +25,6 @@ class MethodChannelFlutterSceneview extends FlutterSceneviewPlatform {
   }
 
   @override
-  Future<Node?> addNode({
-    double x = 0,
-    double y = 0,
-    String? fileName,
-    String? nodeId,
-    bool normalize = false,
-  }) async {
-    return await ARSceneController.instance.addNode(
-      x: x,
-      y: y,
-      fileName: fileName,
-      nodeId: nodeId,
-      normalize: normalize,
-    );
-  }
-
-  @override
-  Future<Node?> addShapeNode(
-    BaseShape shape, {
-    double x = 0,
-    double y = 0,
-  }) async {
-    return await ARSceneController.instance.addShapeNode(shape);
-  }
-
-  @override
   Future<bool?> checkPermissions() async {
     final hasCameraPermissions = await methodChannel.invokeMethod<bool>(
       'checkPermissions',
@@ -62,34 +33,27 @@ class MethodChannelFlutterSceneview extends FlutterSceneviewPlatform {
   }
 
   @override
-  Future<Node?> addTextNode(
-    String text, {
-    double x = 0,
-    double y = 0,
-    double size = 1,
-    String? fontFamily,
-    bool normalize = false,
-  }) async {
-    return await ARSceneController.instance.addTextNode(
-      text,
-      x: x,
-      y: y,
-      size: size,
-      fontFamily: fontFamily,
-      normalize: normalize,
-    );
+  Future<ARCoreAvailability> checkARCoreStatus() async {
+    final result = await methodChannel.invokeMethod('checkARCoreStatus');
+
+    var availability = ARCoreAvailability.unknownError;
+
+    if (result != null) {
+      final statusString = result['status'] as String;
+      availability = ARCoreAvailability.fromStatusString(statusString);
+    }
+
+    return availability;
   }
 
   @override
-  Future<List<HitTestResult>> performHitTest(double x, double y) async {
-    return await ARSceneController.instance.hitTest(x: x, y: y);
-  }
+  Future<ARCoreInstallStatus> requestARCoreInstall() async {
+    final result = await methodChannel.invokeMethod('requestARCoreInstall');
+    if (result != null) {
+      final statusString = result['status'] as String;
+      return  ARCoreInstallStatus.fromStatusString(statusString);
+    }
 
-  @override
-  Future<Uint8List> sceneSnapshot() async {
-    final imageBytes = await sceneChannel.invokeMethod<Uint8List>(
-      'takeSnapshot',
-    );
-    return imageBytes ?? Uint8List.fromList([]);
+    return ARCoreInstallStatus.installRequested;
   }
 }

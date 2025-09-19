@@ -15,8 +15,9 @@ class UltralyticsIntegrationScreen extends StatefulWidget {
 class _UltralyticsIntegrationScreenState extends State<UltralyticsIntegrationScreen> {
   DetectionService? _detectionService;
 
-  final _flutterSceneviewPlugin = FlutterSceneview();
-  late final ARSceneController _arSceneController;
+  // ignore: unused_field
+  final _flutterSceneviewPlugin = FlutterSceneView();
+  late final SceneViewController _sceneViewController;
 
   List<BallDetection> detectedBalls = [];
 
@@ -33,7 +34,7 @@ class _UltralyticsIntegrationScreenState extends State<UltralyticsIntegrationScr
         appBar: AppBar(title: Text('Example w/ ultralytics_yolo')),
         body: Center(
           child: SceneView(
-            onViewCreated: (controller) => _arSceneController = controller,
+            onViewCreated: (controller) => _sceneViewController = controller,
           ),
         ),
         floatingActionButton: FloatingActionButton(
@@ -46,10 +47,10 @@ class _UltralyticsIntegrationScreenState extends State<UltralyticsIntegrationScr
 
   void onCapturePressed() async {
     // Clean up the scene if there's anything from a previous detection
-    await _arSceneController.removeAllNodes();
+    await _sceneViewController.node.removeAllNodes();
 
     try {
-      var imageBytes = await _flutterSceneviewPlugin.sceneSnapshot();
+      var imageBytes = await _sceneViewController.scene.sceneSnapshot();
       var detectionResult = await _detectionService!.analyseImage(imageBytes);
       detectedBalls = await _handleDetections(detectionResult);
     } catch (e) {
@@ -66,7 +67,7 @@ class _UltralyticsIntegrationScreenState extends State<UltralyticsIntegrationScr
       }
 
       final detectedHolePosition = detectionResult.hole?.boundingBox?.center;
-      final holeWorldPositions = await _arSceneController.hitTest(
+      final holeWorldPositions = await _sceneViewController.node.hitTest(
         x: detectedHolePosition!.dx,
         y: detectedHolePosition.dy,
       );
@@ -88,10 +89,14 @@ class _UltralyticsIntegrationScreenState extends State<UltralyticsIntegrationScr
 
   Future<void> _placeArFlag(Offset holePosition) async {
     try {
-      await _arSceneController.addNode(
+      await _sceneViewController.node.createAnchorNode(
         x: holePosition.dx,
         y: holePosition.dy,
-        fileName: 'golf_flag.glb',
+        node: SceneNode(
+          position: Vector3.all(0),
+          type: NodeType.model,
+          config: NodeConfig.model(fileName: 'golf_flag.glb'),
+        ),
       );
     } catch (e) {
       debugPrint(e.toString());
@@ -111,16 +116,16 @@ class _UltralyticsIntegrationScreenState extends State<UltralyticsIntegrationScr
     required Vector3 worldPosition,
     required double radius,
   }) async {
-    final material = BaseMaterial(color: Color.fromARGB(255, 255, 255, 255));
-    final node = Node(position: worldPosition,);
-    final torus = Torus(
-      node,
-      material: material,
-      majorRadius: 1,
-      minorRadius: 0.05,
+    final ring = SceneNode(
+      position: worldPosition,
+      type: NodeType.shape,
+      config: NodeConfig.shape(
+        material: BaseMaterial(color: Color.fromARGB(255, 255, 255, 255)),
+        shape: BaseShape.torus(majorRadius: radius, minorRadius: 0.05),
+      ),
     );
 
-    _arSceneController.addShapeNode(torus);
+    _sceneViewController.node.addNode(node: ring);
   }
 
   Future<List<BallDetection>> _placeArBalls(
@@ -130,7 +135,7 @@ class _UltralyticsIntegrationScreenState extends State<UltralyticsIntegrationScr
     for (BallDetection ball in balls) {
       final ballPosition = ball.boundingBox?.center;
 
-      final worldPositions = await _arSceneController.hitTest(
+      final worldPositions = await _sceneViewController.node.hitTest(
         x: ballPosition!.dx,
         y: ballPosition.dy,
       );
@@ -143,25 +148,33 @@ class _UltralyticsIntegrationScreenState extends State<UltralyticsIntegrationScr
       final ballRot = worldPositions.first.pose.rotation;
       final ballWorldRotation = ballRot;
 
-      final node = Node(
+      final shpere = SceneNode(
         position: ballWorldPosition,
         rotation: ballWorldRotation,
+        type: NodeType.shape,
+        config: NodeConfig.shape(
+          material: BaseMaterial(color: Color.fromARGB(0, 0, 0, 0)),
+          shape: BaseShape.sphere(radius: 0.025),
+        ),
       );
-      final material = BaseMaterial(color: Color.fromARGB(0, 0, 0, 0));
-      final sphere = Sphere(node, material: material, radius: 0.025);
-      await _flutterSceneviewPlugin.addShapeNode(sphere);
+
+      await _sceneViewController.node.addNode(node: shpere);
 
       double distance = _calculateDistanceBetweenPoints(
         holePosition,
         ballWorldPosition,
       );
 
-      await _flutterSceneviewPlugin.addTextNode(
-        '${distance.toStringAsFixed(2)}m',
-        x: ballPosition.dx,
-        y: ballPosition.dy,
-        size: 0.5,
+      final text = SceneNode(
+        position: ballWorldPosition..add(Vector3(0, 0.5, 0)),
+        type: NodeType.shape,
+        config: NodeConfig.text(
+          text: '${distance.toStringAsFixed(2)}m',
+          size: 0.5,
+        ),
       );
+
+      await _sceneViewController.node.addNode(node: text);
 
       ball.distanceToHole = distance;
     }

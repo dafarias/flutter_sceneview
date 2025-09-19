@@ -5,6 +5,8 @@ import android.content.pm.PackageManager
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 
+
+//TODO: Use the arcore bundled permission handler
 class PermissionsHandler(private val activity: Activity) {
     companion object {
         const val CAMERA_PERMISSION = android.Manifest.permission.CAMERA

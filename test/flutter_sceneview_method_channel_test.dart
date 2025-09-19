@@ -5,7 +5,7 @@ import 'package:flutter_sceneview/flutter_sceneview_method_channel.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  MethodChannelFlutterSceneview platform = MethodChannelFlutterSceneview();
+  MethodChannelFlutterSceneView platform = MethodChannelFlutterSceneView();
   const MethodChannel channel = MethodChannel('flutter_sceneview');
 
   setUp(() {

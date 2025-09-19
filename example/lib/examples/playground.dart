@@ -12,12 +12,11 @@ class PlaygroundScreen extends StatefulWidget {
 
 class _PlaygroundScreenState extends State<PlaygroundScreen> {
   String _platformVersion = 'Unknown';
-  final _flutterSceneviewPlugin = FlutterSceneview();
+  final _flutterSceneviewPlugin = FlutterSceneView();
 
-  late final ARSceneController _controller;
-  late final ARSessionController _session;
+  late final SceneViewController _controller;
 
-  final List<Node> placedNodes = [];
+  final List<SceneNode> placedNodes = [];
 
   @override
   void initState() {
@@ -57,7 +56,6 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
         body: Center(
           child: SceneView(
             onViewCreated: (controller) => _controller = controller,
-            sessionController: (session) => _session = session,
             overlayBehavior: OverlayBehavior.showAlwaysOnTrackingChanged,
           ),
         ),
@@ -82,8 +80,9 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
                     width: buttonWidth,
                     child: ElevatedButton(
                       onPressed: () {
-                        checkEvents();
-                        removeById(nodeId: placedNodes.firstOrNull?.nodeId ?? "");
+                        removeById(
+                          nodeId: placedNodes.firstOrNull?.parentId ?? "",
+                        );
                       },
                       child: const Text('Remove by id'),
                     ),
@@ -105,14 +104,16 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
                   SizedBox(
                     width: buttonWidth,
                     child: ElevatedButton(
-                      onPressed: _handleHitTest,
+                      onPressed: () {
+                        placeNode(toRoot: true);
+                      },
                       child: const Text('Hit test'),
                     ),
                   ),
                   SizedBox(
                     width: buttonWidth,
                     child: ElevatedButton(
-                      onPressed: placeNode,
+                      onPressed: createAnchor,
                       child: const Icon(Icons.flag),
                     ),
                   ),
@@ -125,66 +126,165 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
     );
   }
 
-  void placeNode() async {
-    final node = await _flutterSceneviewPlugin.addNode(
-      x: 200,
-      y: 600,
-      fileName: 'models/golf_flag.glb',
-      nodeName: 'Flag',
+  void placeNode({
+    bool toRoot = false,
+    bool asChild = false,
+    bool asChildren = false,
+  }) async {
+    final value = MediaQuery.of(context).size;
+    final results = await hitTest(
+      x: value.width / 2,
+      y: value.height / 2,
+      normalize: true,
     );
 
-    //Todo: Fix node placement and removal logic
-    if (node != null && node.isNotEmpty) {
-      placedNodes.add(node);
+    if (results.isNotEmpty) {
+      if (toRoot) addNode(pose: results.first.pose);
+      if (asChild) addChild(pose: results.first.pose);
+      if (asChildren) addChildren(pose: results.first.pose);
     }
   }
 
-  void placeShapeNode(Vector3 position, Vector3 rotation) async {
-    final node = Node(position: position, rotation: rotation, nodeId: "Sphere");
-    final material = BaseMaterial(color: Color.fromARGB(255, 255, 255, 255));
+  void addNode({required Pose pose}) async {
+    final node = await _controller.node.addNode(
+      node: SceneNode(
+        position: pose.position,
+        rotation: pose.rotation,
+        config: NodeConfig.shape(
+          shape: BaseShape.sphere(radius: 0.1),
+          material: BaseMaterial(color: Colors.lightBlueAccent, metallic: 0.7),
+        ),
+      ),
+    );
+    if (node != null) {
+      placedNodes.add(node);
+    }
 
-    // The shape should not depend on the node to be created
-    final sphere = Sphere(node, material: material, radius: 0.05);
-    // final torus = Torus(
-    //   node,
-    //   material: material,
-    //   majorRadius: 2,
-    //   minorRadius: 0.05,
-    // );
-    final sphereNode = await _flutterSceneviewPlugin.addShapeNode(sphere);
+    debugPrint(node.toString());
+  }
+
+  void placeShapeNode(Vector3 position, Vector3 rotation) async {
+    final node = SceneNode(
+      position: position,
+      rotation: rotation,
+      config: NodeConfig.shape(
+        material: BaseMaterial(color: Color.fromARGB(255, 255, 255, 255)),
+        shape: BaseShape.sphere(radius: 0.05),
+      ),
+    );
+
+    final _ = BaseShape.torus(majorRadius: 2, minorRadius: 0.05);
+    final sphereNode = await _controller.node.addNode(node: node);
 
     if (sphereNode != null) {
-      placedNodes.add(node);
+      placedNodes.add(sphereNode);
     }
   }
 
   void removeById({required String nodeId}) {
-    _controller.removeNode(nodeId: nodeId);
+    _controller.node.removeNode(nodeId: nodeId);
   }
 
-  void onRemoveAll() {
-    _controller.removeAllNodes();
+  void onRemoveAll() async {
+    _controller.node.removeAllNodes();
   }
 
   void getAllNodes() async {
-    final nodes = await _controller.getAllNodes();
-    print('Nodes on scene [${nodes.length}]:');
+    final nodes = await _controller.node.getAllNodes();
+    debugPrint('Nodes on scene [${nodes.length}]:');
 
-    for(final node in nodes) {
-      print('${node.nodeId}: ${node.position} | ${node.rotation} | ${node.scale}');
+    for (final node in nodes) {
+      debugPrint(
+        '${node.nodeId}: ${node.position} | ${node.rotation} | ${node.scale}',
+      );
     }
   }
 
-  void _handleHitTest() async {
-    final results = await _flutterSceneviewPlugin.performHitTest(500, 500);
+  Future<List<HitTestResult>> hitTest({
+    double? x,
+    double? y,
+    bool normalize = true,
+  }) async {
+    final results = await _controller.node.hitTest(
+      x: x ?? 200,
+      y: y ?? 600,
+      normalize: normalize,
+    );
 
     if (results.isEmpty) {
-      print('[Flutter] No hit test results');
-      return;
+      debugPrint('[Flutter] No hit test results');
+      return [];
     }
 
-    final hitTestResult = results.first.pose;
-    placeShapeNode(hitTestResult.position, hitTestResult.rotation);
+    return results;
+  }
+
+  void createAnchor() async {
+    final result = await _controller.node.createAnchorNode(
+      x: 300,
+      y: 400,
+      node: SceneNode(
+        parentId: "anchor",
+        nodeId: "child/flag",
+        position: Vector3.all(0),
+        config: NodeConfig.model(fileName: 'models/golf_flag.glb'),
+      ),
+      normalize: true,
+    );
+
+    if (result != null && result.isPlaced) {
+      placedNodes.add(result);
+    }
+  }
+
+  void detachAnchor({required String anchorId}) {
+    _controller.node.detachAnchor(anchorId: anchorId);
+  }
+
+  void addChild({required Pose pose}) async {
+    final child = await _controller.node.addChildNode(
+      parentId: placedNodes.first.parentId ?? "",
+      child: SceneNode(
+        position: pose.position,
+        rotation: pose.rotation,
+        config: NodeConfig.shape(
+          shape: BaseShape.sphere(radius: 0.1),
+          material: BaseMaterial(color: Colors.purpleAccent, metallic: 0.7),
+        ),
+      ),
+    );
+
+    debugPrint(child.toString());
+  }
+
+  void addChildren({required Pose pose}) async {
+    final children = await _controller.node.addChildNodes(
+      parentId: placedNodes.first.parentId ?? "",
+      children: [
+        SceneNode(
+          position: pose.position,
+          rotation: pose.rotation,
+          config: NodeConfig.shape(
+            shape: BaseShape.sphere(radius: 0.1),
+            material: BaseMaterial(color: Colors.purpleAccent, metallic: 0.7),
+          ),
+        ),
+
+        SceneNode(
+          position: pose.position.clone()..add((Vector3(0.2, 1, -0.35))),
+          rotation: pose.rotation,
+          config: NodeConfig.shape(
+            shape: BaseShape.torus(majorRadius: 0.5, minorRadius: 0.05),
+            material: BaseMaterial(
+              color: Colors.deepOrangeAccent,
+              metallic: 0.7,
+            ),
+          ),
+        ),
+      ],
+    );
+
+    debugPrint(children.toString());
   }
 
   void goToScene() {
@@ -195,7 +295,7 @@ class _PlaygroundScreenState extends State<PlaygroundScreen> {
   }
 
   void checkEvents() {
-    _session.trackingEvents.listen((event) {
+    _controller.session.trackingEvents.listen((event) {
       debugPrint(event.toString());
     });
   }

@@ -5,14 +5,13 @@ import android.util.Log
 import android.view.View
 import android.widget.FrameLayout
 import androidx.lifecycle.Lifecycle
-import com.example.flutter_sceneview.FlutterSceneviewPlugin
-import com.example.flutter_sceneview.ar.ARScene
-import com.example.flutter_sceneview.ar.SessionManager
-import com.example.flutter_sceneview.controllers.ARController
-import com.example.flutter_sceneview.results.NodeResult
-import com.example.flutter_sceneview.results.ARResult
+import com.example.flutter_sceneview.channels.NodeChannel
+import com.example.flutter_sceneview.channels.SceneChannel
+import com.example.flutter_sceneview.channels.SessionChannel
+import com.example.flutter_sceneview.utils.Channels
 import com.google.ar.core.Config
-import io.flutter.plugin.common.BinaryMessenger
+import io.flutter.embedding.engine.plugins.FlutterPlugin
+import io.flutter.embedding.engine.plugins.FlutterPlugin.FlutterAssets
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
@@ -20,42 +19,56 @@ import io.flutter.plugin.platform.PlatformView
 import io.github.sceneview.ar.ARSceneView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
 
 
 class SceneViewWrapper(
     private val context: Context,
+    private val binding: FlutterPlugin.FlutterPluginBinding,
+    private val id: Int,
     lifecycle: Lifecycle,
-    messenger: BinaryMessenger,
-    id: Int,
 ) : PlatformView, MethodCallHandler {
 
-    private val TAG = "SceneViewWrapper"
+    companion object {
+        private const val TAG = "SceneViewWrapper"
+    }
 
     private var sceneView: ARSceneView
-    private val _mainScope = CoroutineScope(Dispatchers.Main)
-    private val _channel = MethodChannel(messenger, "ar_view_wrapper")
-    private var _controller: ARController
-    private val sessionManager: SessionManager
 
-    override fun getView(): View {
-//        Log.i(TAG, "getView:")
-        return sceneView
+    private val _mainScope = CoroutineScope(Dispatchers.Main)
+    private val _channel = MethodChannel(binding.binaryMessenger, Channels.VIEW)
+
+    // Define flutterAssets as a property if not already available
+    private val flutterAssets: FlutterAssets by lazy {
+        binding.flutterAssets
     }
+
+    private var nodeChannel: NodeChannel
+    private var sceneChannel: SceneChannel
+    private var sessionChannel: SessionChannel
+
+
+    override fun getView(): View = sceneView
+
 
     override fun dispose() {
-        // Dispose / destroy all the handlers here as well
         Log.i(TAG, "dispose")
+        sceneView.clearChildNodes()
+        sceneView.destroy()
         _channel.setMethodCallHandler(null)
+        // TODO: Enable after implementing disposal methods
+//        if (::sceneChannel.isInitialized) sceneChannel.let { /* cleanup logic  */ }
+//        if (::_controller.isInitialized) _controller.dispose() // Assume ARController has a dispose method
+//        if (::sessionManager.isInitialized) sessionManager.dispose() // Assume SessionManager has a dispose met
     }
 
-    // Create DTO or Model class to send in the configuration params
+
+    //TODO: Create DTO or Model class to send in the configuration params
     init {
+        _channel.setMethodCallHandler(this)
         try {
             Log.i(TAG, "init")
             sceneView = ARSceneView(context, sharedLifecycle = lifecycle)
             sceneView.apply {
-//              Configure AR session settings
                 sessionConfiguration = { session, config ->
                     // Enable depth if supported on the device
                     config.depthMode =
@@ -67,55 +80,38 @@ class SceneViewWrapper(
                     config.lightEstimationMode = Config.LightEstimationMode.ENVIRONMENTAL_HDR
                 }
 
-                onSessionResumed = { session ->
-                    Log.i(TAG, "onSessionResumed")
-                }
-                onSessionFailed = { exception ->
-                    Log.e(TAG, "onSessionFailed : $exception")
-                }
-                onSessionCreated = { session ->
-                    Log.i(TAG, "onSessionCreated")
-                }
+                layoutParams = FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
+                )
 
-//                onTrackingFailureChanged = { reason ->
-//                    Log.i(TAG, "onTrackingFailureChanged: $reason");
-//                }
+                planeRenderer.isEnabled = true
             }
 
-            //Wrapped Scene manager
-            ARScene(sceneView, messenger, context).enableEnvironment()
-
-
-            sceneView.layoutParams = FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT
+            // Initialize channels after sceneView is ready
+            nodeChannel = NodeChannel(
+                context, flutterAssets, _mainScope, binding.binaryMessenger, sceneView
             )
-            _channel.setMethodCallHandler(this)
+            sceneChannel = SceneChannel(
+                context, flutterAssets, _mainScope, binding.binaryMessenger, sceneView
+            )
+            sessionChannel = SessionChannel(
+                context, flutterAssets, _mainScope, binding.binaryMessenger, sceneView
+            )
+
+            // Enable environment in scene channel
+            sceneChannel.enableEnvironment()
 
         } catch (e: Exception) {
             Log.i(TAG, "Failed to init ARSceneView", e)
-            sceneView = ARSceneView(context)
+            throw e // Re-throw to let the caller handle the failure
         }
-
-        _controller = ARController(
-            context = context,
-            sceneView = sceneView,
-            modelLoader = sceneView.modelLoader,
-            flutterAssets = FlutterSceneviewPlugin.flutterAssets,
-            channel = _channel,
-            coroutineScope = _mainScope
-        )
-
-
-        // Attach SessionManager
-        sessionManager = SessionManager(sceneView, messenger)
-//        sessionManager.startMonitoring()
-
-
     }
+
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
             "init" -> {
+                // if true then finish the initialization on init
                 result.success(null)
             }
 
@@ -124,219 +120,9 @@ class SceneViewWrapper(
                 result.success(null)
             }
 
-            "addNode" -> {
-                onAddNode(call, result)
-                return
-            }
-
-            "addShapeNode" -> {
-                onAddShapeNode(call, result)
-                return
-            }
-
-            "removeNode" -> {
-                onRemoveNode(call, result)
-                return
-            }
-
-            "removeAllNodes" -> {
-                onRemoveAllNodes(result)
-                return
-            }
-
-            "getAllNodes" -> {
-                onGetAllNodes(result)
-                return
-            }
-
-            "performHitTest" -> {
-                onHitTest(call, result)
-                return
-            }
-
-            "addTextNode" -> {
-                onAddTextNode(call, result)
-                return
-            }
-
             else -> result.notImplemented()
         }
     }
 
-    private fun onAddNode(call: MethodCall, result: MethodChannel.Result) {
-        try {
-            Log.i(TAG, "addNode")
-            val args = call.arguments as? Map<*, *>
-            if (args == null) {
-                result.error(
-                    "INVALID_ARGUMENTS",
-                    "Expected a map with node position and optional model file name",
-                    null
-                )
-                return
-            }
-            _mainScope.launch {
-                try {
-                    val nodeResult = _controller.addNode(args)
-                    when (nodeResult) {
-                        is NodeResult.Placed -> {
-                            result.success(nodeResult.node.toMap())
-                        }
-
-                        is NodeResult.Failed -> {
-                            result.error("ADD_NODE_FAILED", nodeResult.reason, null)
-                        }
-                    }
-                } catch (e: Exception) {
-                    result.error("ADD_NODE_ERROR", e.message ?: "Unknown error", null)
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to add node: ${e.message}")
-            result.error("ADD_NODE_ERROR", e.message ?: "Unknown error", null)
-        }
-    }
-
-    private fun onAddShapeNode(call: MethodCall, result: MethodChannel.Result) {
-        try {
-            val args = call.arguments as? Map<*, *>
-
-            if (args == null) {
-                result.error(
-                    "INVALID_ARGUMENTS", "Expected a map with node position", null
-                )
-                return
-            }
-
-            _mainScope.launch {
-                try {
-                    val nodeResult = _controller.addShapeNode(args)
-                    when (nodeResult) {
-                        is NodeResult.Placed -> {
-                            result.success(nodeResult.node.toMap())
-                        }
-
-                        is NodeResult.Failed -> {
-                            result.error("ADD_SHAPE_NODE_FAILED", nodeResult.reason, null)
-                        }
-                    }
-                } catch (e: Exception) {
-                    result.error(
-                        "ADD_SHAPE_NODE_ERROR", e.message ?: "Unknown error", e.stackTraceToString()
-                    )
-                }
-            }
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to add shape node: ${e.message}")
-            result.error("ADD_SHAPE_NODE_ERROR", e.message ?: "Unknown error", null)
-        }
-    }
-
-    private fun onRemoveNode(call: MethodCall, result: MethodChannel.Result) {
-        try {
-            Log.i(TAG, "removeNode")
-            val args = call.arguments as? Map<String, *>
-            if (args == null) {
-                result.error("INVALID_ARGUMENTS", "Expected a map argument", null)
-                return
-            }
-            val id = args["nodeId"] as? String ?: ""
-            val node = _controller.removeNode(nodeId = id)
-            result.success(null)
-        } catch (e: Exception) {
-            result.error("REMOVE_ALL_NODES_ERROR", e.message ?: "Unknown error", null)
-        }
-    }
-
-    private fun onRemoveAllNodes(result: MethodChannel.Result) {
-        try {
-            Log.i(TAG, "removeAllNodes")
-            _controller.removeAllNodes()
-            result.success(null)
-        } catch (e: Exception) {
-            result.error("REMOVE_ALL_NODES_ERROR", e.message ?: "Unknown error", null)
-        }
-    }
-
-    private fun onGetAllNodes(result: MethodChannel.Result) {
-        try {
-            val nodes = _controller.getAllNodes()
-            val nodesList = ArrayList(nodes.map { it.toMap() })
-
-            result.success(nodesList)
-        } catch (e: Exception) {
-            result.error("GET_ALL_NODES_ERROR", e.message ?: "Unknown error", e.stackTraceToString())
-        }
-    }
-
-    private fun onHitTest(call: MethodCall, result: MethodChannel.Result) {
-        try {
-            Log.i(TAG, "performHitTest")
-            val args = call.arguments as? Map<*, *>
-            if (args == null) {
-                result.error(
-                    "INVALID_ARGUMENTS",
-                    "Expected a map with the x and y coordinates to perform a hit test on the AR Scene",
-                    null
-                )
-                return
-            }
-            val results = _controller.hitTest(args)
-
-            when (results) {
-                is ARResult.Hits -> {
-                    result.success(results.hitResult)
-                }
-//                is GenericError.Failed -> {
-//                    result.error("ADD_NODE_FAILED", nodeResult.reason, null)
-//                }
-                else -> {
-                    result.error("HIT_TEST_FAILED", "Unknown error", null)
-                }
-            }
-
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to perform hit test: ${e.message}")
-            result.error("PerformHitTest", e.message, null)
-        }
-    }
-
-
-    private fun onAddTextNode(call: MethodCall, result: MethodChannel.Result) {
-        try {
-            Log.i(TAG, "performHitTest")
-            val args = call.arguments as? Map<*, *>
-            if (args == null) {
-                result.error(
-                    "INVALID_ARGUMENTS",
-                    "Expected a map with the x and y coordinates to perform a hit test on the AR Scene",
-                    null
-                )
-                return
-            }
-
-
-            val results = _controller.addTextNode(args)
-
-//            when (results) {
-//                is ARResult.Hits -> {
-//                    result.success(results.hitResult)
-//                }
-////                is GenericError.Failed -> {
-////                    result.error("ADD_NODE_FAILED", nodeResult.reason, null)
-////                }
-//                else -> {
-//                    result.error("HIT_TEST_FAILED", "Unknown error", null)
-//                }
-//            }
-
-
-        } catch (e: Exception) {
-            Log.e(TAG, "Failed to add text label: ${e.message}")
-            result.error("AddTextNode", e.message, null)
-        }
-    }
 }
-
 
